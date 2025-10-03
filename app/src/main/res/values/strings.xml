@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">LogInSignUp</string>
+    <string name="hello">Hey There,</string>
+    <string name="test"> working</string>
+    <string name="create_account">Create Account</string>
+    <string name="welcome">Welcome Back</string>
+
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+
+    <string name="hide_password">Hide password</string>
+    <string name="show_password">Show password</string>
+
+    <string name="terms_and_conditions">By continuing you accept ouer Privacy Policy and Term of Use</string>
+    <string name="TermsAndConditionPage">Hello, just for practice purpose</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
