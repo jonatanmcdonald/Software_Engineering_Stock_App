@@ -30,7 +30,7 @@ import com.example.loginsignup.components.MyTextField
 import com.example.loginsignup.components.NormalTextComponent
 import com.example.loginsignup.components.PasswordTextFieldComponent
 import com.example.loginsignup.data.User
-import com.example.loginsignup.data.UserViewModel
+import com.example.loginsignup.data.StockAppViewModel
 
 /*
 @Composable
@@ -79,7 +79,7 @@ fun SignUpScreen(navController: NavHostController) {
 @Composable
 fun SignUpScreen(
     navController: NavHostController,
-    userViewModel: UserViewModel = viewModel()) {
+    userViewModel: StockAppViewModel = viewModel()) {
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember {mutableStateOf("")}
