@@ -5,6 +5,7 @@ import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.loginsignup.screens.LogInScreen
 import com.example.loginsignup.screens.SignUpScreen
 import com.example.loginsignup.screens.TermsAndConditionsScreen
 
@@ -19,9 +20,15 @@ fun Nav(){
             SignUpScreen(navController)
         }
 
+        composable(route = "LogInScreen") {
+            LogInScreen(navController)
+        }
+
         composable(route = "TermsAndConditionsScreen") {
             TermsAndConditionsScreen(navController)
         }
+
+
 
 
     }

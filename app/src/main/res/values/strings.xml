@@ -3,6 +3,7 @@
     <string name="hello">Hey There,</string>
     <string name="test"> working</string>
     <string name="create_account">Create Account</string>
+    <string name="log_in">Log In</string>
     <string name="welcome">Welcome Back</string>
 
     <string name="first_name">First Name</string>

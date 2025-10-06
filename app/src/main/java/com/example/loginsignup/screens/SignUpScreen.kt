@@ -21,15 +21,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.loginsignup.R
 import com.example.loginsignup.components.HeadingTextComponent
 import com.example.loginsignup.components.MyTextField
 import com.example.loginsignup.components.NormalTextComponent
 import com.example.loginsignup.components.PasswordTextFieldComponent
-import kotlin.math.log
+import com.example.loginsignup.data.User
+import com.example.loginsignup.data.UserViewModel
 
 /*
 @Composable
@@ -76,7 +77,9 @@ fun SignUpScreen(navController: NavHostController) {
 }*/
 
 @Composable
-fun SignUpScreen(navController: NavHostController) {
+fun SignUpScreen(
+    navController: NavHostController,
+    userViewModel: UserViewModel = viewModel()) {
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember {mutableStateOf("")}
@@ -126,12 +129,22 @@ fun SignUpScreen(navController: NavHostController) {
 
             Button(onClick = {
                 Log.d("Sign Up Screen", "FirstName: $firstName, LastName: $lastName, Email: $email, Password: $password")
+                //inserting new user to Database
+                val newUser = User(
+                    0,
+                    firstName = firstName,
+                    lastName = lastName,
+                    email = email,
+                    password = password
+                )
+                userViewModel.addUser(newUser)
+
             }){
                     Text(text = "Sign Up")
             }
 
             Button(onClick = {
-                navController.navigate("TermsAndConditionsScreen")
+                navController.navigate("LogInScreen")
             }) {
                 Text(text = "Go to Terms and Condition", fontSize = 20.sp)
             }
@@ -147,3 +160,4 @@ fun SignUpScreen(navController: NavHostController) {
 fun DefaultPreviewOfSignUpScreen(){
     SignUpScreen(navController = rememberNavController())
 }
+
