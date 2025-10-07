@@ -23,13 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.loginsignup.R
 import com.example.loginsignup.components.HeadingTextComponent
 import com.example.loginsignup.components.MyTextField
 import com.example.loginsignup.components.NormalTextComponent
 import com.example.loginsignup.components.PasswordTextFieldComponent
-import kotlin.math.log
 
 /*
 @Composable
@@ -134,6 +132,12 @@ fun SignUpScreen(navController: NavHostController) {
                 navController.navigate("TermsAndConditionsScreen")
             }) {
                 Text(text = "Go to Terms and Condition", fontSize = 20.sp)
+            }
+
+            Button(onClick = {
+                navController.navigate("WatchListScreen")
+            }) {
+                Text(text = "View WatchList", fontSize = 20.sp)
             }
         }
 
