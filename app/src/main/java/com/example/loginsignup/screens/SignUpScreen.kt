@@ -21,8 +21,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.loginsignup.R
 import com.example.loginsignup.components.HeadingTextComponent
 import com.example.loginsignup.components.MyTextField
@@ -74,7 +72,7 @@ fun SignUpScreen(navController: NavHostController) {
 }*/
 
 @Composable
-fun SignUpScreen(navController: NavHostController) {
+fun SignUpScreen(onSignedIn: () -> Unit, onViewTerms: () -> Unit) {
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember {mutableStateOf("")}
@@ -129,15 +127,15 @@ fun SignUpScreen(navController: NavHostController) {
             }
 
             Button(onClick = {
-                navController.navigate("TermsAndConditionsScreen")
+                onViewTerms()
             }) {
                 Text(text = "Go to Terms and Condition", fontSize = 20.sp)
             }
 
             Button(onClick = {
-                navController.navigate("WatchListScreen")
+                onSignedIn()
             }) {
-                Text(text = "View WatchList", fontSize = 20.sp)
+                Text(text = "Sign In", fontSize = 20.sp)
             }
         }
 
@@ -149,5 +147,5 @@ fun SignUpScreen(navController: NavHostController) {
 @Preview
 @Composable
 fun DefaultPreviewOfSignUpScreen(){
-    SignUpScreen(navController = rememberNavController())
+    SignUpScreen(onSignedIn = {}, onViewTerms = {})
 }

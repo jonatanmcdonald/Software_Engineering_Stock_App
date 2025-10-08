@@ -1,3 +1,5 @@
+package com.example.loginsignup.viewModels
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.loginsignup.screens.Stock

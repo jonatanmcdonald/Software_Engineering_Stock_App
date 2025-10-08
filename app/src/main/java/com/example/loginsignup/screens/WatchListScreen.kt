@@ -1,6 +1,6 @@
 package com.example.loginsignup.screens
 
-import WatchListViewModel
+import com.example.loginsignup.viewModels.WatchListViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.text.font.FontFamily
@@ -45,16 +45,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 
-// --- Data Classes and Mock Data ---
 data class Stock(val name: String, val symbol: String)
 data class WatchListItem(val name: String, val stock: Stock, val note: String)
 
 // --- Main Screen --
 @Composable
-fun WatchListScreen(navController: NavController, watchListViewModel: WatchListViewModel = viewModel() ) {
+fun WatchListScreen(watchListViewModel: WatchListViewModel = viewModel() ) {
 
     // State for the list of items displayed on the screen
     val watchListItems = remember { mutableStateListOf<WatchListItem>() }
@@ -157,7 +154,7 @@ fun AddWatchlistItemDialog(
     var note by remember { mutableStateOf("") }
 
     // --- State for the Dropdown Menu ---
-    var isDropdownExpanded = stockList.isNotEmpty()
+    val isDropdownExpanded = stockList.isNotEmpty()
 
     var selectedStock by remember { mutableStateOf<Stock?>(null) }
 
@@ -295,5 +292,5 @@ fun ListBox(item: WatchListItem) {
 @Preview(showBackground = true)
 @Composable
 fun WatchListPreview() {
-    WatchListScreen(rememberNavController())
+    WatchListScreen()
 }
