@@ -8,6 +8,5 @@ class StockAppRepository(private val userDao: UserDao) {
 
     suspend fun addUser(user: User){
         userDao.addUser(user)
-
     }
 }

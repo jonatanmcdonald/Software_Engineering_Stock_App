@@ -4,10 +4,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Preview
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Preview
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -17,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.input.pointer.HistoricalChange
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -29,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.loginsignup.R
+import com.example.loginsignup.navigation.MainDest
 
 //welcome message
 @Composable
@@ -228,5 +240,83 @@ fun PasswordTextFieldComponent(labelValue: String,
         visualTransformation = if(passwordVisible.value) VisualTransformation.None else PasswordVisualTransformation()
     )
 }
+
+@Composable
+fun AppBottomBar(
+    tabs: List<String>,
+    currentRoute: String?,
+    onTabSelected: (String) -> Unit
+) {
+
+    val scheme = MaterialTheme.colorScheme
+
+    NavigationBar(
+        containerColor = Color.White,            // bar background
+        contentColor = scheme.onSurfaceVariant,     // default content tint
+        tonalElevation = 6.dp,                      // subtle elevation
+        modifier = Modifier
+            //.shadow(8.dp, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            //.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            //.border(1.dp, scheme.outlineVariant, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+    ) {
+        tabs.forEach { route ->
+            val selected = currentRoute == route
+
+            NavigationBarItem(
+                selected = selected,
+                onClick = { onTabSelected(route) },
+                icon = {
+                    // Example with badges + different icons for selected state
+                    BadgedBox(
+                        badge = {
+                            if (route == MainDest.WATCHLIST /* && unreadCount > 0 */) {
+                                Badge { Text("3") } // or empty Badge() dot
+                            }
+                        }
+                    ) {
+                        if (route == MainDest.HOME) {
+                            Icon(
+                                imageVector = if (selected) Icons.Filled.Home else Icons.Outlined.Home,
+                                contentDescription = "Home"
+                            )
+                        } else if (route == MainDest.WATCHLIST) {
+                            Icon(
+                                imageVector = if (selected) Icons.Filled.Preview else Icons.Outlined.Preview,
+                                contentDescription = "Watchlist"
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (selected) Icons.Filled.Person else Icons.Outlined.Person,
+                                contentDescription = "Profile"
+                            )
+                        }
+                    }
+                },
+                label = {
+                    Text(
+                        when (route) {
+                            MainDest.HOME -> "Home"
+                            MainDest.WATCHLIST -> "Watchlist"
+                            else -> "Profile"
+                        },
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                },
+                // In M3 labels show by default; you can force-hide on unselected:
+                alwaysShowLabel = false,
+
+                colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color.White,
+                        unselectedIconColor = Color.Black,
+                        selectedTextColor = Color.Black,
+                        unselectedTextColor = Color.Gray,
+                        indicatorColor = Color.Green   // <- use indicatorColor (not selectedIndicatorColor)
+                )
+
+            )
+        }
+    }
+}
+
 
 

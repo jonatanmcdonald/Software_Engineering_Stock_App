@@ -3,14 +3,11 @@ package com.example.loginsignup
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.loginsignup.app.LogInSignUp
-import com.example.loginsignup.navigation.Nav
-import com.example.loginsignup.screens.SignUpScreen
-import com.example.loginsignup.ui.theme.LogInSignUpTheme
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.loginsignup.viewModels.AuthViewModel
+import com.example.loginsignup.navigation.AppNavHost
 
 class MainActivity : ComponentActivity()
 {
@@ -18,31 +15,13 @@ class MainActivity : ComponentActivity()
     {
         super.onCreate(savedInstanceState)
         setContent{
-            //LogInSignUp()
-            //SignUpScreen()
+            val vm: AuthViewModel = viewModel()
 
-            Nav()
+            // 2) Observe sign-in state (lifecycle-aware)
+            val isSignedIn by vm.isSignedIn.collectAsStateWithLifecycle()
 
-
-
+            // 3) Pass it down
+            AppNavHost( false)
         }
-    }
-}
-
-
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    LogInSignUpTheme {
-        Greeting("Android")
     }
 }
