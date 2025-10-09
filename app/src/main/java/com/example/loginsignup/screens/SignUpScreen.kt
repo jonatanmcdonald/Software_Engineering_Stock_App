@@ -77,9 +77,7 @@ fun SignUpScreen(navController: NavHostController) {
 }*/
 
 @Composable
-fun SignUpScreen(
-    navController: NavHostController,
-    userViewModel: StockAppViewModel = viewModel()) {
+fun SignUpScreen(onSignedIn: () -> Unit, onViewTerms: () -> Unit, StockAppViewModel: StockAppViewModel = viewModel()) {
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember {mutableStateOf("")}
@@ -137,14 +135,20 @@ fun SignUpScreen(
                     email = email,
                     password = password
                 )
-                userViewModel.addUser(newUser)
+                StockAppViewModel.addUser(newUser)
 
             }){
                     Text(text = "Sign Up")
             }
 
             Button(onClick = {
-                navController.navigate("LogInScreen")
+                onSignedIn()
+            }) {
+                Text(text = "Sign In", fontSize = 20.sp)
+            }
+
+            Button(onClick = {
+                onViewTerms()
             }) {
                 Text(text = "Go to Terms and Condition", fontSize = 20.sp)
             }
@@ -158,6 +162,6 @@ fun SignUpScreen(
 @Preview
 @Composable
 fun DefaultPreviewOfSignUpScreen(){
-    SignUpScreen(navController = rememberNavController())
+    SignUpScreen(onSignedIn = {}, onViewTerms = {})
 }
 
