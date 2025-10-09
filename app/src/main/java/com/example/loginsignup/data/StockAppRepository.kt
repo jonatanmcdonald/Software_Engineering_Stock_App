@@ -2,7 +2,7 @@ package com.example.loginsignup.data
 
 import androidx.lifecycle.LiveData
 
-class UserRepository(private val userDao: UserDao) {
+class StockAppRepository(private val userDao: UserDao) {
 
     val readAllData: LiveData<List<User>> = userDao.readAllData()
 

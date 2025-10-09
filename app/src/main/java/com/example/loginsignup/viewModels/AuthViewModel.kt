@@ -8,4 +8,6 @@ import kotlinx.coroutines.flow.asStateFlow
 class AuthViewModel: ViewModel() {
     private val _isSignedIn = MutableStateFlow(false)
     val isSignedIn: StateFlow<Boolean> = _isSignedIn.asStateFlow()
+
+
 }
