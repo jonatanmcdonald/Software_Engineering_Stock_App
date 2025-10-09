@@ -73,9 +73,6 @@ fun WatchListScreen(watchListViewModel: WatchListViewModel = viewModel() ) {
                 .padding(WindowInsets.systemBars.asPaddingValues()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Spacer(modifier = Modifier.height(16.dp))
             // Button to add a new dialog
             Button(
                 colors = androidx.compose.material3.ButtonDefaults.buttonColors(

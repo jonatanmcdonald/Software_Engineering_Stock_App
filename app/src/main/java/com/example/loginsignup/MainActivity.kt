@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity()
             val isSignedIn by vm.isSignedIn.collectAsStateWithLifecycle()
 
             // 3) Pass it down
-            AppNavHost(isSignedIn = true)
+            AppNavHost( false)
         }
     }
 }

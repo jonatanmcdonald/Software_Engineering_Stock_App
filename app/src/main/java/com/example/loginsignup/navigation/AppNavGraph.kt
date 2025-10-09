@@ -30,6 +30,7 @@ fun AppNavHost(isSignedIn: Boolean) {
         bottomBar = {
             if (showBottomBar) {
                 AppBottomBar(
+                    tabs = tabRoutes,
                     currentRoute = currentRoute,
                     onTabSelected = { route ->
                         navController.navigate(route) {

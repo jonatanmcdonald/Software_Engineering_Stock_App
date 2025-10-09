@@ -243,10 +243,11 @@ fun PasswordTextFieldComponent(labelValue: String,
 
 @Composable
 fun AppBottomBar(
+    tabs: List<String>,
     currentRoute: String?,
     onTabSelected: (String) -> Unit
 ) {
-    val tabs = listOf(MainDest.HOME, MainDest.WATCHLIST, MainDest.PROFILE)
+
     val scheme = MaterialTheme.colorScheme
 
     NavigationBar(

@@ -1,12 +1,9 @@
-package com.example.loginsignup.viewModels
+package com.example.loginsignup.data
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
-import com.example.loginsignup.data.User
-import com.example.loginsignup.data.UserDatabase
-import com.example.loginsignup.data.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -26,4 +23,5 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
             repository.addUser(user)
         }
     }
+
 }
