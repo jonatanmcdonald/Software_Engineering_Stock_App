@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
 
-data class WatchListUi(val name: String, val stock: Stocks, val note: String)
+data class WatchListUi(val name: String, val stock: String, val note: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +42,7 @@ fun WatchListScreen(
     val isLoading by wvm.isLoading.collectAsState()
     val searchQuery by wvm.searchQuery.collectAsState()
     var showDialog by remember { mutableStateOf(false)}
+    var editing by remember {mutableStateOf<WatchList?>(null)}
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -51,7 +52,8 @@ fun WatchListScreen(
                 modifier = Modifier.height(100.dp),
                 windowInsets = WindowInsets(0), // bigger than default
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color(0xFF1E2746),           // new color
+                    //containerColor = Color(0xFF1E2746),           // new color
+                    containerColor = Color(0xFF0F1115),           // new color
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
@@ -70,7 +72,13 @@ fun WatchListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showDialog = true }
+                containerColor = Color.Blue,
+                contentColor = Color.White,
+                onClick = {
+                    editing = null
+                    wvm.onSearchQueryChanged("")
+                    showDialog = true
+                }
             ) { Icon(Icons.Default.Add, contentDescription = "Add") }
         },
 
@@ -100,13 +108,14 @@ fun WatchListScreen(
                     contentPadding = PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(items = rows, key = { it.stock }) { item ->
+                    items(rows, key = { it.stock }) { item ->
                         WatchCard(
                             name = item.name,
                             symbol = item.stock,  // persisted as symbol
                             note = item.note ?: "",
                             onEdit = {
-                                // simple inline edit: open dialog pre-filled
+                                editing = item
+                                wvm.onSearchQueryChanged(item.stock)
                                 showDialog = true
 
                                 // you could pass current item into dialog via remember(...)
@@ -124,8 +133,15 @@ fun WatchListScreen(
         }
 
         if (showDialog) {
+            val initial = editing
             AddWatchlistItemDialog(
                 onDismissRequest = { showDialog = false },
+
+                // Prefill when editing
+                initialName = initial?.name,
+                initialNote = initial?.note,
+                initialStock = initial?.stock,
+                confirmLabel = if (initial == null) "Add" else "Update",
 
                 stockList = stockList,
                 isLoading = isLoading,
@@ -140,7 +156,7 @@ fun WatchListScreen(
                                 userId = userId,
                                 name = ui.name,
                                 note = ui.note.ifBlank { null },
-                                stock = ui.stock.symbol, // save symbol
+                                stock = ui.stock // save stock
                             )
                         )
                     }

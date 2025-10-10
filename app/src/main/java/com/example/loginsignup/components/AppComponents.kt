@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -343,17 +344,30 @@ fun AddWatchlistItemDialog(
     isLoading: Boolean,
     onQueryChange: (String) -> Unit,
     onStockSelected: (Stocks) -> Unit,
+
+    initialName: String? = null,
+    initialNote: String? = null,
+    initialStock: String? = null,
+    confirmLabel: String
+
 ) {
 
-    var name by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var selectedStock by remember { mutableStateOf<Stocks?>(null) }
+    var name by remember(initialName) { mutableStateOf(initialName ?: "") }
+    var note by remember(initialNote) { mutableStateOf(initialNote ?: "") }
+    var selectedStock by remember(initialStock) { mutableStateOf<String?>(null) }
 
+    LaunchedEffect(initialStock) {
+        if (initialStock != null) {
+           onQueryChange(initialStock)
+        }
+    }
     val isDropdownExpanded = stockList.isNotEmpty()
+    val effectiveStock = selectedStock ?: initialStock
+    val canConfirm = name.isNotBlank() && (effectiveStock != null)
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text("Add to Watchlist") },
+        title = { Text(if (initialName == null) "Add to Watchlist" else "Edit Watchlist Item") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -393,7 +407,7 @@ fun AddWatchlistItemDialog(
                             DropdownMenuItem(
                                 text = { Text("${stock.name} (${stock.symbol})") },
                                 onClick = {
-                                    selectedStock = stock
+                                    selectedStock = "${stock.name} (${stock.symbol})"
                                     onStockSelected(stock)
                                 }
                             )
@@ -411,12 +425,11 @@ fun AddWatchlistItemDialog(
             TextButton(
                 enabled = name.isNotBlank() && note.isNotBlank(),
                 onClick = {
-                    selectedStock?.let {
-                        val newItem = WatchListUi(name, it, note)
-                        onSave(newItem)
+                    effectiveStock?.let {
+                        onSave(WatchListUi(name, it, note))
                     }
                 }
-            ) { Text("Save") }
+            ) { Text(confirmLabel) }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) { Text("Cancel") }
