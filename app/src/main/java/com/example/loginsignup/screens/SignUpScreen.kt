@@ -142,6 +142,7 @@ fun SignUpScreen(onSignedIn: () -> Unit, onViewTerms: () -> Unit, stockAppViewMo
             }
 
             Button(onClick = {
+                // Check if the user is signed in
                 onSignedIn()
             }) {
                 Text(text = "Sign In", fontSize = 20.sp)
