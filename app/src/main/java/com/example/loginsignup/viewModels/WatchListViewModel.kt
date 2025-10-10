@@ -2,7 +2,7 @@ package com.example.loginsignup.viewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.loginsignup.screens.Stock
+import com.example.loginsignup.data.models.Stocks
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 
 class WatchListViewModel : ViewModel() {
 
-    private val _stockList = MutableStateFlow<List<Stock>>(emptyList())
+    private val _stockList = MutableStateFlow<List<Stocks>>(emptyList())
     val stockList = _stockList.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
@@ -36,7 +36,7 @@ class WatchListViewModel : ViewModel() {
         }
     }
 
-    fun onStockSelected(stock: Stock) {
+    fun onStockSelected(stock: Stocks) {
         _searchQuery.value = "${stock.name} (${stock.symbol})"
         _stockList.value = emptyList()
     }
@@ -53,14 +53,14 @@ class WatchListViewModel : ViewModel() {
 
                 // 2. Create a list of all possible stocks to search from
                 val allStocks = listOf(
-                    Stock("Apple Inc.", "AAPL"),
-                    Stock("Microsoft Corporation", "MSFT"),
-                    Stock("Amazon.com, Inc.", "AMZN"),
-                    Stock("Tesla, Inc.", "TSLA"),
-                    Stock("Alphabet Inc. (Google)", "GOOGL"),
-                    Stock("NVIDIA Corporation", "NVDA"),
-                    Stock("Meta Platforms, Inc.", "META"),
-                    Stock("International Business Machines", "IBM")
+                    Stocks("Apple Inc.", "AAPL"),
+                    Stocks("Microsoft Corporation", "MSFT"),
+                    Stocks("Amazon.com, Inc.", "AMZN"),
+                    Stocks("Tesla, Inc.", "TSLA"),
+                    Stocks("Alphabet Inc. (Google)", "GOOGL"),
+                    Stocks("NVIDIA Corporation", "NVDA"),
+                    Stocks("Meta Platforms, Inc.", "META"),
+                    Stocks("International Business Machines", "IBM")
                 )
 
                 // 3. Filter the list based on the search query (case-insensitive)

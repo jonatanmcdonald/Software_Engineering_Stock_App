@@ -1,7 +1,10 @@
 package com.example.loginsignup.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -12,8 +15,13 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Preview
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -22,10 +30,13 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -40,7 +51,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.loginsignup.R
+import com.example.loginsignup.data.models.Stocks
 import com.example.loginsignup.navigation.MainDest
+import com.example.loginsignup.screens.WatchListUi
 
 //welcome message
 @Composable
@@ -251,10 +264,12 @@ fun AppBottomBar(
     val scheme = MaterialTheme.colorScheme
 
     NavigationBar(
-        containerColor = Color.White,            // bar background
+
+        containerColor = Color.Black,            // bar background
         contentColor = scheme.onSurfaceVariant,     // default content tint
         tonalElevation = 6.dp,                      // subtle elevation
         modifier = Modifier
+
             //.shadow(8.dp, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             //.clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             //.border(1.dp, scheme.outlineVariant, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
@@ -270,7 +285,7 @@ fun AppBottomBar(
                     BadgedBox(
                         badge = {
                             if (route == MainDest.WATCHLIST /* && unreadCount > 0 */) {
-                                Badge { Text("3") } // or empty Badge() dot
+                                Badge { Text("0") } // or empty Badge() dot
                             }
                         }
                     ) {
@@ -307,16 +322,108 @@ fun AppBottomBar(
 
                 colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = Color.White,
-                        unselectedIconColor = Color.Black,
-                        selectedTextColor = Color.Black,
+                        unselectedIconColor = Color.White,
+                        selectedTextColor = Color.White,
                         unselectedTextColor = Color.Gray,
-                        indicatorColor = Color.Green   // <- use indicatorColor (not selectedIndicatorColor)
+                        indicatorColor = Color.Transparent// <- use indicatorColor (not selectedIndicatorColor)
                 )
 
             )
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddWatchlistItemDialog(
+    stockList: List<Stocks>,
+    searchQuery: String,
+    onDismissRequest: () -> Unit,
+    onSave: (WatchListUi) -> Unit,
+    isLoading: Boolean,
+    onQueryChange: (String) -> Unit,
+    onStockSelected: (Stocks) -> Unit,
+) {
+
+    var name by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    var selectedStock by remember { mutableStateOf<Stocks?>(null) }
+
+    val isDropdownExpanded = stockList.isNotEmpty()
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text("Add to Watchlist") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name, onValueChange = { name = it },
+                    label = { Text("Display Name (e.g., Apple Inc.)") }, singleLine = true
+                )
+                // --- Exposed Dropdown Menu for Stock Selection ---
+                ExposedDropdownMenuBox(
+                    expanded = isDropdownExpanded,
+                    onExpandedChange = {},
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = {
+                            selectedStock = null
+                            onQueryChange(it)
+                        },
+
+                        label = { Text("Search Stock") },
+                        trailingIcon = {
+                            if (isLoading) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.width(24.dp)
+                                )
+                            } else {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
+                            }
+                        },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = isDropdownExpanded,
+                        onDismissRequest = {}
+                    ) {
+                        stockList.forEach { stock ->
+                            DropdownMenuItem(
+                                text = { Text("${stock.name} (${stock.symbol})") },
+                                onClick = {
+                                    selectedStock = stock
+                                    onStockSelected(stock)
+                                }
+                            )
+                        }
+                    }
+                }
+                // --- End of Dropdown ---
+                OutlinedTextField(
+                    value = note, onValueChange = { note = it },
+                    label = { Text("Note (optional)") }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = name.isNotBlank() && note.isNotBlank(),
+                onClick = {
+                    selectedStock?.let {
+                        val newItem = WatchListUi(name, it, note)
+                        onSave(newItem)
+                    }
+                }
+            ) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) { Text("Cancel") }
+        }
+    )
+}
+
 
 
 

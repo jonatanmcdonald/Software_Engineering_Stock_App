@@ -5,10 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [User::class], version = 1, exportSchema = false)
+@Database(entities = [User::class, WatchList::class], version = 3, exportSchema = false)
 abstract class StockAppDatabase: RoomDatabase() {
 
     abstract fun userDao(): UserDao
+    abstract fun watchListDao(): WatchListDao
 
     companion object{
         @Volatile
@@ -21,10 +22,10 @@ abstract class StockAppDatabase: RoomDatabase() {
             }
             synchronized(this){
                 val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    StockAppDatabase::class.java,
-                    "user_database"
-                ).build()
+                                context.applicationContext,
+                                StockAppDatabase::class.java,
+                                "stock_app_database"
+                            ).fallbackToDestructiveMigration(true).build()
                 INSTANCE = instance
                 return instance
             }

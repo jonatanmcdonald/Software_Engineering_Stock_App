@@ -77,6 +77,7 @@ dependencies {
 
     // Room components
     implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.compose.runtime.livedata)
     //kapt("androidx.room:room-compiler:2.8.1")
 
     //Retrofit components

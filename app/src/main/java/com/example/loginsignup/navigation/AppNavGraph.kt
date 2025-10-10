@@ -71,7 +71,7 @@ fun AppNavHost(isSignedIn: Boolean) {
                     //onOpenDetails = { id -> navController.navigate("home/details/$id") }
                 )
             }
-            composable(MainDest.WATCHLIST) { WatchListScreen() }
+            composable(MainDest.WATCHLIST) { WatchListScreen("0") }
             composable(MainDest.PROFILE) { ProfileScreen() }
 
             // ---- deeper routes (bottom bar auto-hidden) ----

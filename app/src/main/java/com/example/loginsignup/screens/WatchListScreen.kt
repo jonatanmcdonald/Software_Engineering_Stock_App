@@ -1,293 +1,197 @@
 package com.example.loginsignup.screens
 
-import com.example.loginsignup.viewModels.WatchListViewModel
+import com.example.loginsignup.data.StockAppViewModel
+import com.example.loginsignup.data.WatchList
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.livedata.observeAsState
+import com.example.loginsignup.components.AddWatchlistItemDialog
+import com.example.loginsignup.data.models.Stocks
+import com.example.loginsignup.viewModels.WatchListViewModel
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
-data class Stock(val name: String, val symbol: String)
-data class WatchListItem(val name: String, val stock: Stock, val note: String)
 
-// --- Main Screen --
+data class WatchListUi(val name: String, val stock: Stocks, val note: String)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WatchListScreen(watchListViewModel: WatchListViewModel = viewModel() ) {
+fun WatchListScreen(
+    userId: String,
+    vm: StockAppViewModel = viewModel(),
+    wvm: WatchListViewModel = viewModel()
+) {
+    val rows by vm.getAllForUser(userId).observeAsState(emptyList())
+    val scope = rememberCoroutineScope()
+    val stockList by wvm.stockList.collectAsState()
+    val isLoading by wvm.isLoading.collectAsState()
+    val searchQuery by wvm.searchQuery.collectAsState()
+    var showDialog by remember { mutableStateOf(false)}
 
-    // State for the list of items displayed on the screen
-    val watchListItems = remember { mutableStateListOf<WatchListItem>() }
+    Scaffold(
+        contentWindowInsets = WindowInsets(0),
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            CenterAlignedTopAppBar(
+                modifier = Modifier.height(100.dp),
+                windowInsets = WindowInsets(0), // bigger than default
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color(0xFF1E2746),           // new color
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                ),
+                title = {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(),               // take full app bar height
+                        contentAlignment = Alignment.Center // center vertically + horizontally
+                    ) {
+                        Text("My Watchlist", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
+                    }
+                },
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showDialog = true }
+            ) { Icon(Icons.Default.Add, contentDescription = "Add") }
+        },
 
-    val stockList by watchListViewModel.stockList.collectAsState()
-    val isLoading by watchListViewModel.isLoading.collectAsState()
-    val searchQuery by watchListViewModel.searchQuery.collectAsState()
+    ) { inner ->
 
-
-    // --- SIMPLIFIED DIALOG STATE ---
-    // A single boolean to control the dialog's visibility
-    var showDialog by remember { mutableStateOf(false) }
-
-    Surface(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black)
-                .padding(WindowInsets.systemBars.asPaddingValues()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(inner)
+                .background(Color(0xFF0F1115))
         ) {
-            // Button to add a new dialog
-            Button(
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                    containerColor = Color.Red,
-                    contentColor = Color.White
-                ),
-                onClick = {
-                    // Just set the boolean to true to show the dialog
-                    showDialog = true
-                },
-
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            ) {
-                Text(text = "Add New Watchlist Item")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            // --- Display Watchlist Items ---
-            if (watchListItems.isEmpty()) {
+            if (rows.isEmpty()) {
                 Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No Items in Watchlist",
-                        fontSize = 24.sp,
-                        textAlign = TextAlign.Center,
+                        "No items yet.\nTap + to add your first stock.",
+                        style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
+                        textAlign = TextAlign.Center
                     )
                 }
             } else {
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(watchListItems) { item ->
-                        ListBox(item = item)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(items = rows, key = { it.stock }) { item ->
+                        WatchCard(
+                            name = item.name,
+                            symbol = item.stock,  // persisted as symbol
+                            note = item.note ?: "",
+                            onEdit = {
+                                // simple inline edit: open dialog pre-filled
+                                showDialog = true
+
+                                // you could pass current item into dialog via remember(...)
+                            },
+
+                            onDelete = {
+                                scope.launch {
+                                    vm.deleteWatchListItem(userId, item.stock)
+                                }
+                            }
+                        )
                     }
                 }
             }
         }
 
-        // --- Dialog Management ---
-        // If showDialog is true, compose the dialog
         if (showDialog) {
             AddWatchlistItemDialog(
-                stockList = stockList,
-                onDismissRequest = { showDialog = false }, // On cancel, set to false
-                searchQuery = searchQuery,
-                isLoading = isLoading,
-                onQueryChange = watchListViewModel::onSearchQueryChanged,
-                onStockSelected = watchListViewModel::onStockSelected,
-                onSave = { newItem ->
-                    watchListItems.add(newItem) // Save the data
-                    showDialog = false          // Close the dialog
+                onDismissRequest = { showDialog = false },
 
+                stockList = stockList,
+                isLoading = isLoading,
+                searchQuery = searchQuery,
+                onQueryChange = wvm::onSearchQueryChanged,
+                onStockSelected = wvm::onStockSelected,
+                onSave = { ui ->
+                    // Persist: map UI -> entity
+                    scope.launch {
+                        vm.upsertByUserAndStock(
+                            WatchList(
+                                userId = userId,
+                                name = ui.name,
+                                note = ui.note.ifBlank { null },
+                                stock = ui.stock.symbol, // save symbol
+                            )
+                        )
+                    }
+                    showDialog = false
                 }
             )
         }
     }
 }
 
-// --- Dialog Composable with Dropdown ---
-@OptIn(ExperimentalMaterial3Api::class) // Required for ExposedDropdownMenuBox
 @Composable
-fun AddWatchlistItemDialog(
-    stockList: List<Stock>,
-    searchQuery: String,
-    isLoading: Boolean,
-    onQueryChange: (String) -> Unit,
-    onStockSelected: (Stock) -> Unit,
-    onDismissRequest: () -> Unit,
-    onSave: (WatchListItem) -> Unit
+private fun WatchCard(
+    name: String,
+    symbol: String,
+    note: String,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
-    // State for the text fields within the dialog
-    var name by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-
-    // --- State for the Dropdown Menu ---
-    val isDropdownExpanded = stockList.isNotEmpty()
-
-    var selectedStock by remember { mutableStateOf<Stock?>(null) }
-
-    Dialog(onDismissRequest = onDismissRequest) {
-        Card(
-            modifier = Modifier.fillMaxWidth().background(Color.Gray),
-            elevation = CardDefaults.cardElevation(8.dp),
-
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp).background(Color.White),
-                horizontalAlignment = Alignment.CenterHorizontally
-                
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF171A21)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Add to Watchlist", fontSize = 20.sp, modifier = Modifier.padding(top = 5.dp))
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Item Name") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // --- Exposed Dropdown Menu for Stock Selection ---
-                ExposedDropdownMenuBox(
-                    expanded = isDropdownExpanded,
-                    onExpandedChange = {},
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = {
-                            selectedStock = null
-                            onQueryChange(it)
-                        },
-
-                        label = { Text("Search Stock") },
-                        trailingIcon = {
-                            if (isLoading) {
-                                androidx.compose.material3.CircularProgressIndicator(
-                                    modifier = Modifier.width(24.dp)
-                                )
-                            } else {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
-                            }
-                        },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = isDropdownExpanded,
-                        onDismissRequest = {}
-                    ) {
-                        stockList.forEach { stock ->
-                            DropdownMenuItem(
-                                text = { Text("${stock.name} (${stock.symbol})") },
-                                onClick = {
-                                    selectedStock = stock
-                                    onStockSelected(stock)
-                                }
-                            )
-                        }
+                Column(Modifier.weight(1f)) {
+                    Text(name, style = MaterialTheme.typography.titleLarge, color = Color.White)
+                    Text(symbol, style = MaterialTheme.typography.titleSmall, color = Color(0xFF9AA4B2))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = Color(0xFFB3C5FF))
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = Color(0xFFFF8C8C))
                     }
                 }
-                // --- End of Dropdown ---
-
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Button(onClick = onDismissRequest) {
-                        Text("Cancel")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        enabled = selectedStock != null && name.isNotBlank(),
-                        onClick = {
-                           selectedStock?.let{
-                               val newItem = WatchListItem(name, it, note)
-                               onSave(newItem)
-                           }
-                        }
-                    ) {
-                        Text("Save")
-                    }
-                }
+            }
+            if (note.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                Text(note, style = MaterialTheme.typography.bodyMedium, color = Color(0xFFDEE4EA))
             }
         }
     }
 }
 
 
-// --- List Item Composable ---
-@Composable
-fun ListBox(item: WatchListItem) {
-    // Card for better UI distinction
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .background(Color.Gray)
-        ,
-        elevation = CardDefaults.cardElevation(8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(2.dp)
-                .fillMaxWidth()
-                .background(Color.White)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = item.name, fontSize = 30.sp, color = Color.Black, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "${item.stock.name} (${item.stock.symbol})", fontSize = 16.sp, color = Color.Black, fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Note: ${item.note}", fontSize = 16.sp, color = Color.Black, fontWeight = FontWeight.Thin, fontFamily = FontFamily.Serif)
-        }
-    }
-}
 
-
-// --- Preview ---
-@Preview(showBackground = true)
-@Composable
-fun WatchListPreview() {
-    WatchListScreen()
-}
