@@ -11,6 +11,14 @@ class StockAppRepository(private val userDao: UserDao, private val watchListDao:
         userDao.addUser(user)
     }
 
+    suspend fun getUserByEmailAndPassword(email: String, password: String): User? {
+        return userDao.getUserByEmailAndPassword(email, password)
+    }
+
+    suspend fun isEmailTaken(email: String): Boolean {
+        return userDao.getUserByEmail(email) != null
+    }
+
     suspend fun existsForUser(userId: String, stock: String): Boolean{
         return watchListDao.existsForUser(userId, stock)
     }

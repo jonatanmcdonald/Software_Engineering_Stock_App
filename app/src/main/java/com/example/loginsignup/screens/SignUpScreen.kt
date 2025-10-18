@@ -1,6 +1,8 @@
 package com.example.loginsignup.screens
 
 import android.util.Log
+import android.util.Patterns
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -74,13 +77,22 @@ fun SignUpScreen(navController: NavHostController) {
     }
 }*/
 
+fun isValidEmail(email: String): Boolean {
+    return Patterns.EMAIL_ADDRESS.matcher(email).matches()
+}
+
 @Composable
-fun SignUpScreen(onSignedIn: () -> Unit, onViewTerms: () -> Unit, stockAppViewModel: StockAppViewModel = viewModel()) {
+fun SignUpScreen(onViewTerms: () -> Unit,
+                 onViewSignIn: () -> Unit,
+                 stockAppViewModel: StockAppViewModel = viewModel())
+{
 
     var firstName by remember { mutableStateOf("") }
     var lastName by remember {mutableStateOf("")}
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
 
     Surface(
         modifier = Modifier
@@ -108,13 +120,11 @@ fun SignUpScreen(onSignedIn: () -> Unit, onViewTerms: () -> Unit, stockAppViewMo
                 textValue = lastName,
                 onValueChange = {lastName = it})
 
-
             MyTextField(
                 labelValue = stringResource(id =R.string.email),
                 painterResource(id = R.drawable.email_symbol),
                 textValue = email,
                 onValueChange = {email = it})
-
 
             PasswordTextFieldComponent(
                 labelValue = stringResource(id =R.string.password),
@@ -124,16 +134,43 @@ fun SignUpScreen(onSignedIn: () -> Unit, onViewTerms: () -> Unit, stockAppViewMo
             )
 
             Button(onClick = {
-                Log.d("Sign Up Screen", "FirstName: $firstName, LastName: $lastName, Email: $email, Password: $password")
-                //inserting new user to Database
-                val newUser = User(
-                    0,
-                    firstName = firstName,
-                    lastName = lastName,
-                    email = email,
-                    password = password
-                )
-                stockAppViewModel.addUser(newUser)
+                when {
+                    !isValidEmail(email) -> {
+                        Toast.makeText(context, "Email is invalid", Toast.LENGTH_SHORT).show()
+                    }
+                    password.isBlank() -> {
+                        Toast.makeText(context, "Password cannot be empty", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        Log.d(
+                            "Sign Up Screen",
+                            "FirstName: $firstName, LastName: $lastName, Email: $email, Password: $password"
+                        )
+                        //inserting new user to Database
+                        val newUser = User(
+                            0,
+                            firstName = firstName,
+                            lastName = lastName,
+                            email = email,
+                            password = password
+                        )
+
+                        stockAppViewModel.signUpUser(newUser) { success ->
+                            if (success) {
+                                Toast.makeText(context, "Sign Up Succesful!", Toast.LENGTH_SHORT)
+                                    .show()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Email is already taken!",
+                                    Toast.LENGTH_SHORT
+                                )
+                                    .show()
+                            }
+
+                        }
+                    }
+                }
 
             }){
                     Text(text = "Sign Up")
@@ -141,7 +178,7 @@ fun SignUpScreen(onSignedIn: () -> Unit, onViewTerms: () -> Unit, stockAppViewMo
 
             Button(onClick = {
                 // Check if the user is signed in
-                onSignedIn()
+                onViewSignIn()
             }) {
                 Text(text = "Sign In", fontSize = 20.sp)
             }
@@ -161,6 +198,6 @@ fun SignUpScreen(onSignedIn: () -> Unit, onViewTerms: () -> Unit, stockAppViewMo
 @Preview
 @Composable
 fun DefaultPreviewOfSignUpScreen(){
-    SignUpScreen(onSignedIn = {}, onViewTerms = {})
+    SignUpScreen(onViewTerms = {}, onViewSignIn = {})
 }
 

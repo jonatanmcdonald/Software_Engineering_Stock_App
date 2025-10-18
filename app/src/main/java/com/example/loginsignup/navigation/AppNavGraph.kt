@@ -5,6 +5,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,6 +13,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.loginsignup.components.AppBottomBar
 import com.example.loginsignup.screens.HomeScreen
+import com.example.loginsignup.screens.LogInScreen
 import com.example.loginsignup.screens.SignUpScreen
 import com.example.loginsignup.screens.TermsAndConditionsScreen
 import com.example.loginsignup.screens.WatchListScreen
@@ -53,14 +55,26 @@ fun AppNavHost(isSignedIn: Boolean) {
             composable(AuthDest.SIGN_UP) {
                 SignUpScreen(
                     onViewTerms = { navController.navigate(AuthDest.TERMS) },
-                    onSignedIn = {
-                        navController.navigate(MainDest.HOME) {
-                            popUpTo(AuthDest.SIGN_UP) { inclusive = true } // clear auth
-                            launchSingleTop = true
-                        }
+
+                    onViewSignIn = {
+                        navController.navigate(AuthDest.LOGIN)
                     }
+
                 )
             }
+            composable(AuthDest.LOGIN) {
+                LogInScreen(
+                    onSignedIn = {
+                        navController.navigate(MainDest.HOME) {
+                            popUpTo(AuthDest.LOGIN) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onViewTerms = {navController.navigate(AuthDest.TERMS)},
+                    stockAppViewModel = viewModel()
+                )
+            }
+
             composable(AuthDest.TERMS) {
                 TermsAndConditionsScreen(onBack = { navController.popBackStack() })
             }

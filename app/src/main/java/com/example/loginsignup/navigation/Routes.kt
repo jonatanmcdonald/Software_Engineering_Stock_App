@@ -8,6 +8,7 @@ object Graph {
 // Authentication destinations
 object AuthDest {
     const val SIGN_UP = "signUp"
+    const val LOGIN = "login"
     const val TERMS = "terms"
 }
 
