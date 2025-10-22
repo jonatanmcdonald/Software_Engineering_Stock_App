@@ -30,8 +30,8 @@ import com.example.loginsignup.components.HeadingTextComponent
 import com.example.loginsignup.components.MyTextField
 import com.example.loginsignup.components.NormalTextComponent
 import com.example.loginsignup.components.PasswordTextFieldComponent
-import com.example.loginsignup.data.User
-import com.example.loginsignup.data.StockAppViewModel
+import com.example.loginsignup.data.db.entity.User
+import com.example.loginsignup.viewModels.UserViewModel
 
 /*
 @Composable
@@ -84,7 +84,7 @@ fun isValidEmail(email: String): Boolean {
 @Composable
 fun SignUpScreen(onViewTerms: () -> Unit,
                  onViewSignIn: () -> Unit,
-                 stockAppViewModel: StockAppViewModel = viewModel())
+                 userViewModel: UserViewModel = viewModel())
 {
 
     var firstName by remember { mutableStateOf("") }
@@ -155,7 +155,7 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                             password = password
                         )
 
-                        stockAppViewModel.signUpUser(newUser) { success ->
+                        userViewModel.signUpUser(newUser) { success ->
                             if (success) {
                                 Toast.makeText(context, "Sign Up Succesful!", Toast.LENGTH_SHORT)
                                     .show()

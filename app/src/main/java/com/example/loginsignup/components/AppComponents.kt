@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Preview
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -37,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,9 +54,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.loginsignup.R
-import com.example.loginsignup.data.models.Stocks
+import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.navigation.MainDest
-import com.example.loginsignup.screens.WatchListUi
+import com.example.loginsignup.screens.WatchRow
 
 //welcome message
 @Composable
@@ -290,21 +292,25 @@ fun AppBottomBar(
                             }
                         }
                     ) {
-                        if (route == MainDest.HOME) {
-                            Icon(
-                                imageVector = if (selected) Icons.Filled.Home else Icons.Outlined.Home,
-                                contentDescription = "Home"
-                            )
-                        } else if (route == MainDest.WATCHLIST) {
-                            Icon(
-                                imageVector = if (selected) Icons.Filled.Preview else Icons.Outlined.Preview,
-                                contentDescription = "Watchlist"
-                            )
-                        } else {
-                            Icon(
-                                imageVector = if (selected) Icons.Filled.Person else Icons.Outlined.Person,
-                                contentDescription = "Profile"
-                            )
+                        when (route) {
+                            MainDest.HOME -> {
+                                Icon(
+                                    imageVector = if (selected) Icons.Filled.Home else Icons.Outlined.Home,
+                                    contentDescription = "Home"
+                                )
+                            }
+                            MainDest.WATCHLIST -> {
+                                Icon(
+                                    imageVector = if (selected) Icons.Filled.Preview else Icons.Outlined.Preview,
+                                    contentDescription = "Watchlist"
+                                )
+                            }
+                            else -> {
+                                Icon(
+                                    imageVector = if (selected) Icons.Filled.Person else Icons.Outlined.Person,
+                                    contentDescription = "Profile"
+                                )
+                            }
                         }
                     }
                 },
@@ -337,97 +343,120 @@ fun AppBottomBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWatchlistItemDialog(
-    stockList: List<Stocks>,
+    // VM-provided search state
+    stockList: List<Stock>,
     searchQuery: String,
-    onDismissRequest: () -> Unit,
-    onSave: (WatchListUi) -> Unit,
-    isLoading: Boolean,
     onQueryChange: (String) -> Unit,
-    onStockSelected: (Stocks) -> Unit,
+    onStockSelected: (Stock) -> Unit,
 
+    // Prefill / edit
     initialName: String? = null,
     initialNote: String? = null,
-    initialStock: String? = null,
-    confirmLabel: String
+    initialStock: String? = null,   // e.g., "AAPL" when editing
+    confirmLabel: String,
+    isLoading: Boolean,
 
+    // Save / close
+    onSave: (WatchRow) -> Unit,
+    onDismissRequest: () -> Unit,
 ) {
+    var name by rememberSaveable(initialName) { mutableStateOf(initialName.orEmpty()) }
+    var note by rememberSaveable(initialNote) { mutableStateOf(initialNote.orEmpty()) }
 
-    var name by remember(initialName) { mutableStateOf(initialName ?: "") }
-    var note by remember(initialNote) { mutableStateOf(initialNote ?: "") }
-    var selectedStock by remember(initialStock) { mutableStateOf<String?>(null) }
-
+    // One-time prefill of the query when editing
     LaunchedEffect(initialStock) {
-        if (initialStock != null) {
-           onQueryChange(initialStock)
+        if (!initialStock.isNullOrBlank() && searchQuery.isBlank()) {
+            onQueryChange(initialStock)
         }
     }
-    val isDropdownExpanded = stockList.isNotEmpty()
-    val effectiveStock = selectedStock ?: initialStock
-    val canConfirm = name.isNotBlank() && (effectiveStock != null)
+
+    // The dropdown is “expanded” only when we actually have suggestions
+    val expanded = stockList.isNotEmpty()
+
+    // Save is allowed if there’s a chosen/typed symbol
+    val canConfirm = searchQuery.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(if (initialName == null) "Add to Watchlist" else "Edit Watchlist Item") },
+        title = {
+            Text(if (initialName == null) "Add to Watchlist" else "Edit Watchlist Item")
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
-                    value = name, onValueChange = { name = it },
-                    label = { Text("Display Name (e.g., Apple Inc.)") }, singleLine = true
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Display Name (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                // --- Exposed Dropdown Menu for Stock Selection ---
+
+                // Search field + suggestions
                 ExposedDropdownMenuBox(
-                    expanded = isDropdownExpanded,
-                    onExpandedChange = {},
+                    expanded = expanded,
+                    onExpandedChange = { /* expansion is controlled by having results */ },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = {
-                            selectedStock = null
-                            onQueryChange(it)
+                            onQueryChange(it)     // VM handles debounce + results
                         },
-
-                        label = { Text("Search Stock") },
+                        label = { Text("Search symbol or name") },
+                        singleLine = true,
+                        enabled = !isLoading,
                         trailingIcon = {
                             if (isLoading) {
-                                androidx.compose.material3.CircularProgressIndicator(
-                                    modifier = Modifier.width(24.dp)
-                                )
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded)
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                             }
                         },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
                     )
+
                     ExposedDropdownMenu(
-                        expanded = isDropdownExpanded,
-                        onDismissRequest = {}
+                        expanded = expanded,
+                        onDismissRequest = {
+                            // No-op; list will close when VM clears results after selection.
+                        }
                     ) {
                         stockList.forEach { stock ->
                             DropdownMenuItem(
                                 text = { Text("${stock.name} (${stock.symbol})") },
                                 onClick = {
-                                    selectedStock = "${stock.name} (${stock.symbol})"
+                                    // Tell VM which stock was picked
                                     onStockSelected(stock)
+                                    // Mirror the symbol into the text field (keeps future searches sane)
+                                    onQueryChange(stock.symbol)
+                                    // VM should clear stockList in onStockSelected → expanded becomes false
                                 }
                             )
                         }
                     }
                 }
-                // --- End of Dropdown ---
+
                 OutlinedTextField(
-                    value = note, onValueChange = { note = it },
-                    label = { Text("Note (optional)") }
+                    value = note,
+                    onValueChange = { note = it },
+                    label = { Text("Note (optional)") },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
             TextButton(
-                enabled = name.isNotBlank() && note.isNotBlank(),
+                enabled = canConfirm && !isLoading,
                 onClick = {
-                    effectiveStock?.let {
-                        onSave(WatchListUi(name, it, note))
-                    }
+                    onSave(
+                        WatchRow(
+                            name = name,
+                            note = note,
+                            symbol = searchQuery.trim() // VM/Save will resolve to stockId
+                        )
+                    )
                 }
             ) { Text(confirmLabel) }
         },
@@ -436,6 +465,7 @@ fun AddWatchlistItemDialog(
         }
     )
 }
+
 
 
 

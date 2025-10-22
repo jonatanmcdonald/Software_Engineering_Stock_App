@@ -71,7 +71,7 @@ fun AppNavHost(isSignedIn: Boolean) {
                         }
                     },
                     onViewTerms = {navController.navigate(AuthDest.TERMS)},
-                    stockAppViewModel = viewModel()
+                    userViewModel = viewModel()
                 )
             }
 

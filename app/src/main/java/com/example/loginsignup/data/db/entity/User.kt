@@ -1,8 +1,7 @@
-package com.example.loginsignup.data
+package com.example.loginsignup.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import org.intellij.lang.annotations.PrintFormat
 
 @Entity(tableName = "user_table")
 data class User(

@@ -1,7 +1,6 @@
 package com.example.loginsignup.screens
 
-import com.example.loginsignup.data.StockAppViewModel
-import com.example.loginsignup.data.WatchList
+import com.example.loginsignup.data.db.entity.WatchList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,30 +18,32 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.livedata.observeAsState
 import com.example.loginsignup.components.AddWatchlistItemDialog
-import com.example.loginsignup.data.models.Stocks
 import com.example.loginsignup.viewModels.WatchListViewModel
-import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.getValue
 
+import androidx.compose.foundation.lazy.items
 
-data class WatchListUi(val name: String, val stock: String, val note: String)
-
+data class WatchRow(
+    val name: String,
+    val note: String?,
+    val symbol: String
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WatchListScreen(
     userId: String,
-    vm: StockAppViewModel = viewModel(),
     wvm: WatchListViewModel = viewModel()
 ) {
-    val rows by vm.getAllForUser(userId).observeAsState(emptyList())
+    val rows by wvm.getAllForUserWithSymbol(userId).observeAsState(emptyList())
     val scope = rememberCoroutineScope()
     val stockList by wvm.stockList.collectAsState()
     val isLoading by wvm.isLoading.collectAsState()
     val searchQuery by wvm.searchQuery.collectAsState()
     var showDialog by remember { mutableStateOf(false)}
-    var editing by remember {mutableStateOf<WatchList?>(null)}
+    var editing by remember {mutableStateOf<WatchRow?>(null)}
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -108,24 +109,19 @@ fun WatchListScreen(
                     contentPadding = PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(rows, key = { it.stock }) { item ->
+                    items(rows, key = { it.id }) { item ->
                         WatchCard(
+                            symbol = item.symbol,
                             name = item.name,
-                            symbol = item.stock,  // persisted as symbol
-                            note = item.note ?: "",
+                            note = item.note.orEmpty(),
                             onEdit = {
-                                editing = item
-                                wvm.onSearchQueryChanged(item.stock)
-                                showDialog = true
+                               editing = WatchRow(
+                                   name = item.name,
+                                   note = item.note,
+                                   symbol = item.symbol)
 
-                                // you could pass current item into dialog via remember(...)
                             },
-
-                            onDelete = {
-                                scope.launch {
-                                    vm.deleteWatchListItem(userId, item.stock)
-                                }
-                            }
+                            onDelete = { wvm.delete(item.id) }
                         )
                     }
                 }
@@ -140,7 +136,7 @@ fun WatchListScreen(
                 // Prefill when editing
                 initialName = initial?.name,
                 initialNote = initial?.note,
-                initialStock = initial?.stock,
+                initialStock = initial?.symbol,
                 confirmLabel = if (initial == null) "Add" else "Update",
 
                 stockList = stockList,
@@ -151,12 +147,12 @@ fun WatchListScreen(
                 onSave = { ui ->
                     // Persist: map UI -> entity
                     scope.launch {
-                        vm.upsertByUserAndStock(
+                        wvm.upsertByUserAndStock(
                             WatchList(
                                 userId = userId,
                                 name = ui.name,
-                                note = ui.note.ifBlank { null },
-                                stock = ui.stock // save stock
+                                note = ui.note?.ifBlank { null },
+                                stockId = wvm.getStockId(ui.symbol)// save stock
                             )
                         )
                     }

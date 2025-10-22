@@ -1,6 +1,5 @@
 package com.example.loginsignup.screens
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -27,28 +26,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.loginsignup.R
 import com.example.loginsignup.components.HeadingTextComponent
 import com.example.loginsignup.components.MyTextField
 import com.example.loginsignup.components.NormalTextComponent
 import com.example.loginsignup.components.PasswordTextFieldComponent
-import com.example.loginsignup.data.StockAppViewModel
-import com.example.loginsignup.data.User
+import com.example.loginsignup.viewModels.UserViewModel
 
 @Composable
 fun LogInScreen(onSignedIn: () -> Unit,
                 onViewTerms: () -> Unit,
                 //stockAppViewModel: StockAppViewModel? = null
-                stockAppViewModel: StockAppViewModel = viewModel()
+                userViewModel: UserViewModel = viewModel()
 )
 {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("")}
 
-    val loginResult by stockAppViewModel.loginResult.observeAsState()
+    val loginResult by userViewModel.loginResult.observeAsState()
     val context = LocalContext.current
 
 
@@ -90,7 +85,8 @@ fun LogInScreen(onSignedIn: () -> Unit,
             Button(
                 onClick = {
                     //Log.d("Sign Up Screen",Email: $email, Password: $password")
-                    stockAppViewModel.login(email, password)
+                    userViewModel.login(email, password)
+                    onSignedIn()
             },
                 modifier = Modifier.fillMaxWidth()
                 ) {
