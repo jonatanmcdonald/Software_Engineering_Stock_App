@@ -1,17 +1,23 @@
 package com.example.loginsignup.viewModels
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.asFlow
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
+import com.example.loginsignup.data.db.entity.PriceToday
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
+import com.example.loginsignup.data.models.ApiResponse
+import com.example.loginsignup.data.models.RetrofitInstance.getApiKey
+import com.example.loginsignup.data.models.toTodayRows
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -20,6 +26,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
 
     // Toggle this if you want to seed the DB once
     private val first = false
+
+    private val newDay = false
     private val debounceDuration = 500L
 
     // --- Search state exposed to UI ---
@@ -72,6 +80,10 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         if (first) {
             viewModelScope.launch { insertStocks() }
         }
+
+        if (newDay) {
+            viewModelScope.launch { insertPrices() }
+        }
     }
 
 
@@ -114,6 +126,28 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
 
     suspend fun getStockSymbol(stockId: Long): String =
         repository.getStockSymbol(stockId)
+
+    //Seed daily prices
+    suspend fun insertPrices() {
+        val allStocks: List<Stock> = repository.getAllStocks()
+
+        for (stock in allStocks) {
+            try {
+                val resp: ApiResponse = repository.fetchDailyPrices(stock.symbol, getApiKey())
+
+                val rows: List<PriceToday> = resp.toTodayRows(stockId = stock.id)
+
+                if (rows.isNotEmpty()) {
+                    repository.upsertAllPrice(rows)                // implement in your repo/DAO
+                }
+            } catch (t: Throwable) {
+               Log.d("Insert Failed", "insertPrices: ${t.message}")
+            }
+
+            //Respect API throttle (Alpha Vantage free tier ~5 calls/min)
+            delay(12_500)
+        }
+    }
 
     // --- Seed list ---
     private suspend fun insertStocks() {

@@ -12,6 +12,9 @@ interface StockDao {
     @Insert(onConflict = OnConflictStrategy.Companion.IGNORE) // ABORT to respect the unique index
     suspend fun upsertAll(items: List<Stock>): List<Long>
 
+    @Query("SELECT * FROM stocks ORDER BY symbol")
+    suspend fun getAllStocks(): List<Stock>
+
     @Query("SELECT id FROM stocks WHERE symbol = :symbol")
     suspend fun getStockId(symbol: String): Long
 

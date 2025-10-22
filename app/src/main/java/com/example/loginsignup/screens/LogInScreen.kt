@@ -86,7 +86,9 @@ fun LogInScreen(onSignedIn: () -> Unit,
                 onClick = {
                     //Log.d("Sign Up Screen",Email: $email, Password: $password")
                     userViewModel.login(email, password)
-                    onSignedIn()
+
+                    //uncomment for testing homescreen
+                    //onSignedIn()
             },
                 modifier = Modifier.fillMaxWidth()
                 ) {
