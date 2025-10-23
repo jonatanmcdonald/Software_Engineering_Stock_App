@@ -1,5 +1,6 @@
 package com.example.loginsignup.screens
 
+
 import com.example.loginsignup.data.db.entity.WatchList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -7,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.livedata.observeAsState
 import com.example.loginsignup.components.AddWatchlistItemDialog
 import com.example.loginsignup.viewModels.WatchListViewModel
 import androidx.compose.ui.text.font.FontWeight
@@ -25,19 +24,35 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 
 import androidx.compose.foundation.lazy.items
+import java.util.Locale
 
 data class WatchRow(
     val name: String,
     val note: String?,
-    val symbol: String
+    val ticker: String
 )
+
+data class WatchUi(
+    val id: Long,
+    val name: String,
+    val note: String?,
+    val ticker: String,
+    val price: Double?,        // latest close (or open if close missing)
+    val change: Double?,       // price - previous price
+    val changePercent: Double?,
+    val isUp: Boolean?         // null if change unknown
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WatchListScreen(
     userId: String,
-    wvm: WatchListViewModel = viewModel()
+    wvm: WatchListViewModel = viewModel(),
+    onViewDetails: (String) -> Unit
 ) {
-    val rows by wvm.getAllForUserWithSymbol(userId).observeAsState(emptyList())
+    LaunchedEffect(userId) { wvm.startWatchlistPriceUpdate(userId) }
+    val rows by wvm.watchRows.collectAsState()
+   // Log.d("WatchList",rows.toString())
     val scope = rememberCoroutineScope()
     val stockList by wvm.stockList.collectAsState()
     val isLoading by wvm.isLoading.collectAsState()
@@ -111,14 +126,19 @@ fun WatchListScreen(
                 ) {
                     items(rows, key = { it.id }) { item ->
                         WatchCard(
-                            symbol = item.symbol,
-                            name = item.name,
-                            note = item.note.orEmpty(),
+                            symbol = item.ticker,
+                            isUp = item.isUp,
+                            price = item.price,
+                            change = item.change,
+                            changePercent = item.changePercent,
+
+                            //name = item.name,
+                           // note = item.note.orEmpty(),
                             onEdit = {
                                editing = WatchRow(
                                    name = item.name,
-                                   note = item.note,
-                                   symbol = item.symbol)
+                                   note = item.note?.ifBlank { null },
+                                   ticker = item.ticker)
 
                             },
                             onDelete = { wvm.delete(item.id) }
@@ -136,7 +156,7 @@ fun WatchListScreen(
                 // Prefill when editing
                 initialName = initial?.name,
                 initialNote = initial?.note,
-                initialStock = initial?.symbol,
+                initialStock = initial?.ticker,
                 confirmLabel = if (initial == null) "Add" else "Update",
 
                 stockList = stockList,
@@ -152,7 +172,7 @@ fun WatchListScreen(
                                 userId = userId,
                                 name = ui.name,
                                 note = ui.note?.ifBlank { null },
-                                stockId = wvm.getStockId(ui.symbol)// save stock
+                                stockId = wvm.getStockId(ui.ticker)// save stock
                             )
                         )
                     }
@@ -165,12 +185,22 @@ fun WatchListScreen(
 
 @Composable
 private fun WatchCard(
-    name: String,
+    //name: String,
     symbol: String,
-    note: String,
+    price: Double?,
+    change: Double?,
+    changePercent: Double?,
+    isUp: Boolean?,
+   // note: String,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+
+    val color = when (isUp) {
+        true  -> Color(0xFF16A34A) // green
+        false -> Color(0xFFDC2626) // red
+        null  -> Color(0xFF9AA4B2) // neutral
+    }
     Card(
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF171A21)
@@ -185,22 +215,46 @@ private fun WatchCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(name, style = MaterialTheme.typography.titleLarge, color = Color.White)
-                    Text(symbol, style = MaterialTheme.typography.titleSmall, color = Color(0xFF9AA4B2))
+                    //Text(name, style = MaterialTheme.typography.titleLarge, color = Color.White)
+                    Text(symbol, style = MaterialTheme.typography.titleLarge, color = Color(0xFF9AA4B2))
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = Color(0xFFB3C5FF))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+
+                    Text(
+                        text = price?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "--",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = color
+                    )
+                    if (change != null) {
+                        Text(
+                            text = "(" + String.format(Locale.getDefault(), "%.2f", change) + ")",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = color
+                        )
+
                     }
+                    if (changePercent != null) {
+                        Text(
+                            text = String.format(Locale.getDefault(), "%.2f%%", changePercent),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = color
+                        )
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
+                   // IconButton(onClick = onEdit) {
+                    //    Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = Color(0xFFB3C5FF))
+                  //  }
                     IconButton(onClick = onDelete) {
                         Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = Color(0xFFFF8C8C))
                     }
                 }
             }
-            if (note.isNotBlank()) {
-                Spacer(Modifier.height(8.dp))
-                Text(note, style = MaterialTheme.typography.bodyMedium, color = Color(0xFFDEE4EA))
-            }
+           // if (note.isNotBlank()) {
+                //Spacer(Modifier.height(8.dp))
+                //Text(note, style = MaterialTheme.typography.bodyMedium, color = Color(0xFFDEE4EA))
+           // }
         }
     }
 }

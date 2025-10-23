@@ -16,6 +16,7 @@ object AuthDest {
 object MainDest {
     const val ROOT = "main_root"
     const val HOME = "home"
+    const val DETAILS = "details"
     const val WATCHLIST = "watchlist"
     const val PROFILE = "profile"
 }

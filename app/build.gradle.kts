@@ -22,7 +22,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${project.property("ALPHA_VANTAGE_API_KEY")}\"")
+        buildConfigField("String", "FINN_API_KEY", "\"${project.property("FINN_API_KEY")}\"")
     }
 
     buildTypes {

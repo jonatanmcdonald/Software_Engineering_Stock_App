@@ -4,19 +4,17 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.loginsignup.data.db.dao.PricesTodayDao
 import com.example.loginsignup.data.db.dao.StockDao
 import com.example.loginsignup.data.db.entity.User
 import com.example.loginsignup.data.db.dao.UserDao
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.dao.WatchListDao
-import com.example.loginsignup.data.db.entity.PriceToday
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
 
 
 
-@Database(entities = [User::class, WatchList::class, Stock::class, PriceToday::class], views = [WatchListWithSymbol::class], version = 4, exportSchema = false)
+@Database(entities = [User::class, WatchList::class, Stock::class], views = [WatchListWithSymbol::class], version = 5, exportSchema = false)
 abstract class StockAppDatabase: RoomDatabase() {
 
     abstract fun userDao(): UserDao
@@ -24,7 +22,6 @@ abstract class StockAppDatabase: RoomDatabase() {
 
     abstract fun stockDao(): StockDao
 
-    abstract fun pricesTodayDao(): PricesTodayDao
 
     companion object{
         @Volatile

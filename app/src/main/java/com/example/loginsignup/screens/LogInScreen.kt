@@ -88,7 +88,7 @@ fun LogInScreen(onSignedIn: () -> Unit,
                     userViewModel.login(email, password)
 
                     //uncomment for testing homescreen
-                    //onSignedIn()
+                    onSignedIn()
             },
                 modifier = Modifier.fillMaxWidth()
                 ) {

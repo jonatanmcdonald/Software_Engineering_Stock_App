@@ -8,25 +8,27 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.asFlow
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
-import com.example.loginsignup.data.db.entity.PriceToday
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
-import com.example.loginsignup.data.models.ApiResponse
-import com.example.loginsignup.data.models.RetrofitInstance.getApiKey
-import com.example.loginsignup.data.models.toTodayRows
+import com.example.loginsignup.screens.WatchUi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicInteger
 
+private const val CALLS_PER_MINUTE = 60              // your real limit
+private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class WatchListViewModel(application: Application) : AndroidViewModel(application) {
 
     // Toggle this if you want to seed the DB once
     private val first = false
-
+    private var priceJob: Job? = null
     private val newDay = false
     private val debounceDuration = 500L
 
@@ -37,6 +39,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     // The chosen stock from the search results (for add/edit actions)
     private val _selectedStock = MutableStateFlow<Stock?>(null)
 
+    private val _watchRows = MutableStateFlow<List<WatchUi>>(emptyList())
+    val watchRows: StateFlow<List<WatchUi>> = _watchRows.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -52,9 +56,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         val userDao = db.userDao()
         val watchListDao = db.watchListDao()
         val stockDao = db.stockDao()
-        val priceDao = db.pricesTodayDao()
 
-        repository = StockAppRepository(priceDao, userDao, watchListDao, stockDao)
+        repository = StockAppRepository(userDao, watchListDao, stockDao)
 
         // Search pipeline (single source of truth = `searchQuery`)
         viewModelScope.launch {
@@ -74,19 +77,130 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 }
                 .catch { _stockList.value = emptyList() }
-                .collect { results -> _stockList.value = results }
+                .onEach { results -> _stockList.value = results }
+                .launchIn(viewModelScope) // launch the collection once
         }
 
-        if (first) {
-            viewModelScope.launch { insertStocks() }
-        }
+        //if (first) {
+        //    viewModelScope.launch { insertStocks() }
+        //}
 
-        if (newDay) {
-            viewModelScope.launch { insertPrices() }
+    }
+
+
+    private fun reconcileWithWatchlist(watchlist: List<WatchListWithSymbol>) {
+        _watchRows.update { current ->
+            val existingById = current.associateBy { it.id }
+            watchlist.map { w ->
+                val prev = existingById[w.id]
+                prev?.// existing item → keep live fields, refresh static labels
+                copy(
+                    name = w.name,
+                    ticker = w.ticker,
+                    note = w.note
+                    // price/change/isUp preserved
+                )
+                    ?: // new item → seed placeholder (keeps UI smooth; prices come in live)
+                    WatchUi(
+                        id = w.id,
+                        name = w.name,
+                        ticker = w.ticker,
+                        note = w.note,
+                        price = null,
+                        change = null,
+                        changePercent = null,
+                        isUp = null
+                    )
+            }
+        }
+    }
+
+    /** Call this once when the screen opens (pass the signed-in user's id). */
+    fun startWatchlistPriceUpdate(userId: String) {
+        priceJob?.cancel()
+        priceJob = viewModelScope.launch {
+            // 1) Keep a live, mutable snapshot of the current watchlist for rotation
+            var rotation: List<WatchListWithSymbol> = emptyList()
+
+            // 2) Listen to watchlist changes and reconcile UI labels immediately
+            val watchlistCollector = launch {
+                repository.observeAllForUsers(userId)
+                    .distinctUntilChanged() // avoid noisy re-emits
+                    .collectLatest { list ->
+                        rotation = list
+                        reconcileWithWatchlist(list) // update names/tickers/notes instantly
+                    }
+            }
+
+            // 3) Continuous drip loop: one API call every GAP_MS, cycling through rotation
+            val existingIndex = AtomicInteger(0)
+            val index = existingIndex // (or keep a local var if you prefer)
+            while (isActive) {
+                val snapshot = rotation // read current list
+                if (snapshot.isNotEmpty()) {
+                    val i = index.getAndIncrement()
+                    val target = snapshot[i % snapshot.size]
+
+                    try {
+                        val row = updateOneRow(target) // one API call
+                        mergeRow(row)                  // atomic UI update
+                    } catch (t: Throwable) {
+                        // swallow; we'll try again next cycle
+                        Log.w("WatchListVM", "fetch failed for ${target.ticker}: ${t.message}")
+                    }
+                }
+                delay(GAP_MS)
+            }
+            // cancel child collector if loop exits
+            watchlistCollector.cancel()
+        }
+    }
+
+    /** Upsert a single row atomically, preserving watchlist order. */
+    private fun mergeRow(row: WatchUi) {
+        _watchRows.update { current ->
+            val byId = current.associateBy { it.id }.toMutableMap()
+            byId[row.id] = row
+            current.map { byId[it.id]!! }
         }
     }
 
 
+    private suspend fun updateOneRow(w: WatchListWithSymbol): WatchUi {
+        val existing = _watchRows.value.find { it.id == w.id }
+        return try {
+
+           val resp = repository.fetchPrice(w.ticker)
+            val latestPx: Double? = resp.price
+            val change: Double? = resp.change
+            val changePc: Double? = resp.percentChange
+           // Log.d("WatchListViewModel", "updateOneRow: $resp")
+            //Log.d("WatchListViewModel", "updateOneRow: $latestPx")
+
+            WatchUi(
+                id = w.id,
+                name = w.name,
+                ticker = w.ticker,
+                note = w.note,
+                price = latestPx,
+                change = change,
+                changePercent = changePc,
+                isUp = change?.let { it > 0.0 }
+            )
+        } catch (t: Throwable) {
+            // Fall back to whatever we had
+            existing ?: WatchUi(
+                id = w.id,
+                name = w.name,
+                ticker = w.ticker,
+                note = w.note,
+                price = null,
+                change = null,
+                changePercent = null,
+                isUp = null
+            )
+        }
+    }
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
         _selectedStock.value = null
@@ -115,6 +229,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         repository.getWatchListItem(id, itemId)
 
     fun delete(itemId: Long) = viewModelScope.launch {
+        // instantly remove from UI
+        _watchRows.update { it.filterNot { row -> row.id == itemId } }
         repository.deleteWatchListItem(itemId)
     }
 
@@ -127,54 +243,40 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     suspend fun getStockSymbol(stockId: Long): String =
         repository.getStockSymbol(stockId)
 
-    //Seed daily prices
-    suspend fun insertPrices() {
-        val allStocks: List<Stock> = repository.getAllStocks()
+    // --- Seed list ---
+    /*
+    private suspend fun insertStocks() {
+        try {
+            val resp = repository.fetchAllUsStocks()
+            val rows = resp.map{
+                Stock(
+                    ticker = it.ticker,
+                    name = it.name,
+                    market = it.market,
+                    locale = it.locale,
+                    type = it.type,
+                    currencyName = it.currencyName,
+                    primaryExchange = it.primaryExchange
+                )
 
-        for (stock in allStocks) {
-            try {
-                val resp: ApiResponse = repository.fetchDailyPrices(stock.symbol, getApiKey())
-
-                val rows: List<PriceToday> = resp.toTodayRows(stockId = stock.id)
-
-                if (rows.isNotEmpty()) {
-                    repository.upsertAllPrice(rows)                // implement in your repo/DAO
-                }
-            } catch (t: Throwable) {
-               Log.d("Insert Failed", "insertPrices: ${t.message}")
             }
 
-            //Respect API throttle (Alpha Vantage free tier ~5 calls/min)
-            delay(12_500)
+            if (rows.isNotEmpty()) {
+                repository.upsertAll(rows)
+            }
         }
-    }
+        catch (t: Throwable) {
+            Log.d("Insert Failed", "insertStocks: ${t.message}")
+        }
 
-    // --- Seed list ---
-    private suspend fun insertStocks() {
-        val allStocks = listOf(
-            Stock(symbol = "AAPL", name = "Apple Inc."),
-            Stock(symbol = "MSFT", name = "Microsoft Corporation"),
-            Stock(symbol = "AMZN", name = "Amazon.com, Inc."),
-            Stock(symbol = "TSLA", name = "Tesla, Inc."),
-            Stock(symbol = "GOOGL", name = "Alphabet Inc. (Google)"),
-            Stock(symbol = "NVDA", name = "NVIDIA Corporation"),
-            Stock(symbol = "META", name = "Meta Platforms, Inc."),
-            Stock(symbol = "IBM", name = "International Business Machines"),
-            Stock(symbol = "NFLX", name = "Netflix, Inc."),
-            Stock(symbol = "INTC", name = "Intel Corporation"),
-            Stock(symbol = "AMD", name = "Advanced Micro Devices, Inc."),
-            Stock(symbol = "ORCL", name = "Oracle Corporation"),
-            Stock(symbol = "ADBE", name = "Adobe Inc."),
-            Stock(symbol = "PYPL", name = "PayPal Holdings, Inc."),
-            Stock(symbol = "DIS", name = "The Walt Disney Company")
-        )
-        repository.upsertAll(allStocks)
     }
+    */
+
 
     fun onStockSelected(stock: Stock) {
         _selectedStock.value = stock
         // Prefill the text field for UX (optional)
-        _searchQuery.value = stock.symbol
+        _searchQuery.value = stock.ticker
         _stockList.value = emptyList()
     }
 }

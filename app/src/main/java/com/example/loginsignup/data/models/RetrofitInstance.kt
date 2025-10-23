@@ -7,9 +7,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 
-private const val BASE_URL = "https://www.alphavantage.co"
+private const val BASE_URL = "https://finnhub.io/api/v1/"
 
-private const val API_KEY = BuildConfig.ALPHA_VANTAGE_API_KEY
+private const val API_KEY = BuildConfig.FINN_API_KEY
 
 object RetrofitInstance {
     val api: ApiService by lazy {

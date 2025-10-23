@@ -7,6 +7,8 @@ import androidx.room.Dao
 import androidx.room.Query
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
+import kotlinx.coroutines.flow.Flow
+
 
 @Dao
 interface WatchListDao {
@@ -60,4 +62,13 @@ interface WatchListDao {
         LIMIT 1
     """)
     fun getWatchListItemWithSymbol(userId: String, stockId: Long): LiveData<WatchListWithSymbol?>
+
+    @Query("""
+          SELECT w.id, w.userId, w.stockId, w.name, w.note, w.createdAt, w.updatedAt, s.ticker
+          FROM watchlist w JOIN stocks s ON s.id = w.stockId
+          WHERE w.userId = :userId
+          ORDER BY w.updatedAt DESC, w.createdAt DESC
+        """)
+    fun observeAllForUser(userId: String): Flow<List<WatchListWithSymbol>>
+
 }

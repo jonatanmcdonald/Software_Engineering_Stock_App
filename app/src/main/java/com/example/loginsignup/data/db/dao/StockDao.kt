@@ -12,28 +12,28 @@ interface StockDao {
     @Insert(onConflict = OnConflictStrategy.Companion.IGNORE) // ABORT to respect the unique index
     suspend fun upsertAll(items: List<Stock>): List<Long>
 
-    @Query("SELECT * FROM stocks ORDER BY symbol")
+    @Query("SELECT id, name, ticker FROM stocks ORDER BY ticker")
     suspend fun getAllStocks(): List<Stock>
 
-    @Query("SELECT id FROM stocks WHERE symbol = :symbol")
-    suspend fun getStockId(symbol: String): Long
+    @Query("SELECT id FROM stocks WHERE ticker = :ticker")
+    suspend fun getStockId(ticker: String): Long
 
-    @Query("SELECT symbol FROM stocks WHERE id = :id")
+    @Query("SELECT ticker FROM stocks WHERE id = :id")
     suspend fun getStockSymbol(id: Long): String
 
     @Query(
         """
-        SELECT * FROM stocks
+        SELECT id, name, ticker FROM stocks
         WHERE name   LIKE '%' || :q || '%' ESCAPE '\' COLLATE NOCASE
-           OR symbol LIKE '%' || :q || '%' ESCAPE '\' COLLATE NOCASE
+           OR ticker LIKE '%' || :q || '%' ESCAPE '\' COLLATE NOCASE
         ORDER BY
-          (symbol = :q) DESC,                                 -- exact symbol first
+          (ticker = :q) DESC,                                 -- exact symbol first
           (name   = :q) DESC,                                 -- exact name next
-          (symbol LIKE :q || '%') DESC,                       -- prefix on symbol
+          (ticker LIKE :q || '%') DESC,                       -- prefix on symbol
           (name   LIKE :q || '%') DESC,                       -- prefix on name
-          INSTR(LOWER(symbol), LOWER(:q)),                    -- then substring position
+          INSTR(LOWER(ticker), LOWER(:q)),                    -- then substring position
           INSTR(LOWER(name),   LOWER(:q)),
-          symbol ASC
+          ticker ASC
         LIMIT :limit
     """
     )

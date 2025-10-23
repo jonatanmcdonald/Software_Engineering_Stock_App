@@ -1,5 +1,6 @@
 package com.example.loginsignup.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -7,17 +8,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.loginsignup.components.AppBottomBar
+import com.example.loginsignup.screens.DetailsScreen
 import com.example.loginsignup.screens.HomeScreen
 import com.example.loginsignup.screens.LogInScreen
 import com.example.loginsignup.screens.SignUpScreen
 import com.example.loginsignup.screens.TermsAndConditionsScreen
 import com.example.loginsignup.screens.WatchListScreen
 
+
+private object Routes {
+    const val DetailsPattern = "screen/details/{id}"
+    fun details(id: String) =
+        "screen/details/${Uri.encode(id)}"
+}
 @Composable
 fun AppNavHost(isSignedIn: Boolean) {
     val navController = rememberNavController()
@@ -85,14 +95,17 @@ fun AppNavHost(isSignedIn: Boolean) {
                     //onOpenDetails = { id -> navController.navigate("home/details/$id") }
                 )
             }
-            composable(MainDest.WATCHLIST) { WatchListScreen("0") }
+            composable(
+                route = Routes.DetailsPattern,
+                arguments = listOf(
+                    navArgument("id") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id").orEmpty()
+                DetailsScreen(id = id, userId = "0", onBack = { navController.popBackStack() })
+            }
+            composable(MainDest.WATCHLIST) { WatchListScreen("0", onViewDetails = { id -> navController.navigate(Routes.details(id))})}
             composable(MainDest.PROFILE) { ProfileScreen() }
-
-            // ---- deeper routes (bottom bar auto-hidden) ----
-            /*composable("home/details/{id}") { backStackEntry ->
-                val id = backStackEntry.arguments?.getString("id") ?: ""
-                HomeDetailsScreen(id, onBack = { navController.popBackStack() })
-            }*/
         }
     }
 }

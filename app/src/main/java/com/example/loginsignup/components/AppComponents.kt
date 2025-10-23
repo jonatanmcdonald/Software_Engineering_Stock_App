@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -41,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.stringResource
@@ -53,6 +56,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.loginsignup.R
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.navigation.MainDest
@@ -343,44 +347,48 @@ fun AppBottomBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWatchlistItemDialog(
-    // VM-provided search state
     stockList: List<Stock>,
     searchQuery: String,
     onQueryChange: (String) -> Unit,
     onStockSelected: (Stock) -> Unit,
-
-    // Prefill / edit
     initialName: String? = null,
     initialNote: String? = null,
-    initialStock: String? = null,   // e.g., "AAPL" when editing
+    initialStock: String? = null,
     confirmLabel: String,
     isLoading: Boolean,
-
-    // Save / close
     onSave: (WatchRow) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    var name by rememberSaveable(initialName) { mutableStateOf(initialName.orEmpty()) }
-    var note by rememberSaveable(initialNote) { mutableStateOf(initialNote.orEmpty()) }
+    var name by rememberSaveable { mutableStateOf(initialName.orEmpty()) }
+    var note by rememberSaveable { mutableStateOf(initialNote.orEmpty()) }
 
-    // One-time prefill of the query when editing
+    val scroll = rememberScrollState()
+
+    LaunchedEffect(stockList.size, stockList.firstOrNull()?.ticker, searchQuery) {
+        if (stockList.isNotEmpty()) scroll.scrollTo(0)
+    }
+    val maxMenuHeight = 200.dp
+
+    // NEW: local expansion + focus gating
+    var expanded by remember { mutableStateOf(false) }
+    var hasFocus by remember { mutableStateOf(false) }
+
+    // Open only when focused and we have results
+    LaunchedEffect(stockList, hasFocus) {
+        expanded = hasFocus && stockList.isNotEmpty()
+    }
+
     LaunchedEffect(initialStock) {
         if (!initialStock.isNullOrBlank() && searchQuery.isBlank()) {
             onQueryChange(initialStock)
         }
     }
 
-    // The dropdown is “expanded” only when we actually have suggestions
-    val expanded = stockList.isNotEmpty()
-
-    // Save is allowed if there’s a chosen/typed symbol
     val canConfirm = searchQuery.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = {
-            Text(if (initialName == null) "Add to Watchlist" else "Edit Watchlist Item")
-        },
+        title = { Text(if (initialName == null) "Add to Watchlist" else "Edit Watchlist Item") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -391,23 +399,23 @@ fun AddWatchlistItemDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Search field + suggestions
                 ExposedDropdownMenuBox(
                     expanded = expanded,
-                    onExpandedChange = { /* expansion is controlled by having results */ },
+                    onExpandedChange = { wantOpen ->
+                        // allow manual toggle, but still require focus + results
+                        expanded = wantOpen && hasFocus && stockList.isNotEmpty()
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
                         value = searchQuery,
-                        onValueChange = {
-                            onQueryChange(it)     // VM handles debounce + results
-                        },
+                        onValueChange = { onQueryChange(it) },
                         label = { Text("Search symbol or name") },
                         singleLine = true,
-                        enabled = !isLoading,
+                        enabled = true, // <-- keep editable even while loading
                         trailingIcon = {
                             if (isLoading) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                             }
@@ -415,23 +423,25 @@ fun AddWatchlistItemDialog(
                         modifier = Modifier
                             .menuAnchor()
                             .fillMaxWidth()
+                            .onFocusChanged { hasFocus = it.isFocused }
                     )
 
                     ExposedDropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = {
-                            // No-op; list will close when VM clears results after selection.
-                        }
+                        onDismissRequest = { expanded = false }, // <-- actually close
+                        modifier = Modifier
+                            .exposedDropdownSize(matchTextFieldWidth = true)
+                            .heightIn(max = maxMenuHeight)
+                            .verticalScroll(scroll)
+                            .zIndex(1f)
                     ) {
                         stockList.forEach { stock ->
                             DropdownMenuItem(
-                                text = { Text("${stock.name} (${stock.symbol})") },
+                                text = { Text("${stock.name} (${stock.ticker})") },
                                 onClick = {
-                                    // Tell VM which stock was picked
                                     onStockSelected(stock)
-                                    // Mirror the symbol into the text field (keeps future searches sane)
-                                    onQueryChange(stock.symbol)
-                                    // VM should clear stockList in onStockSelected → expanded becomes false
+                                    onQueryChange(stock.ticker)
+                                    expanded = false // close after pick
                                 }
                             )
                         }
@@ -454,7 +464,7 @@ fun AddWatchlistItemDialog(
                         WatchRow(
                             name = name,
                             note = note,
-                            symbol = searchQuery.trim() // VM/Save will resolve to stockId
+                            ticker = searchQuery.trim()
                         )
                     )
                 }

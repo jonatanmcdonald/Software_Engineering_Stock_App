@@ -1,8 +1,6 @@
 package com.example.loginsignup.data.db
 
 import androidx.lifecycle.LiveData
-import com.example.loginsignup.data.db.entity.PriceToday
-import com.example.loginsignup.data.db.dao.PricesTodayDao
 import com.example.loginsignup.data.db.dao.StockDao
 import com.example.loginsignup.data.db.dao.UserDao
 import com.example.loginsignup.data.db.dao.WatchListDao
@@ -10,11 +8,12 @@ import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.User
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
-import com.example.loginsignup.data.models.ApiResponse
+import com.example.loginsignup.data.models.LastQuote
 import com.example.loginsignup.data.models.RetrofitInstance.api
+import com.example.loginsignup.data.models.RetrofitInstance.getApiKey
 import kotlinx.coroutines.flow.Flow
 
-class StockAppRepository(private val priceDao: PricesTodayDao, private val userDao: UserDao, private val watchListDao: WatchListDao, private val stockDao: StockDao) {
+class StockAppRepository(private val userDao: UserDao, private val watchListDao: WatchListDao, private val stockDao: StockDao) {
 
     val readAllData: LiveData<List<User>> = userDao.readAllData()
 
@@ -88,23 +87,34 @@ class StockAppRepository(private val priceDao: PricesTodayDao, private val userD
         return stockDao.getAllStocks()
     }
 
-
-    suspend fun getStockId( stockSymbol: String): Long {
-        return stockDao.getStockId(stockSymbol)
+    suspend fun getStockId( ticker: String): Long {
+        return stockDao.getStockId(ticker)
     }
 
-    suspend fun upsertAllPrice(items: List<PriceToday>) {
-        priceDao.upsertAll(items)
+    fun observeAllForUsers(userId: String): Flow<List<WatchListWithSymbol>> {
+        return watchListDao.observeAllForUser(userId)
     }
 
-    fun observeSlot(stockId: Long, slot: Int): Flow<PriceToday?> {
-        return priceDao.observeSlot(stockId, slot)
-    }
+     suspend fun fetchPrice(symbol: String): LastQuote =
+         api.getLastQuote(symbol = symbol, token = getApiKey())
 
-    suspend fun getForSlot(stockId: Long, slot: Int): PriceToday? {
-        return priceDao.getForSlot(stockId, slot)
-    }
 
-    suspend fun fetchDailyPrices(symbol: String, apiKey: String): ApiResponse =
-        api.getDailyPrices(symbol = symbol, apiKey = apiKey)
+
+    /** Pulls ALL active US stock tickers, respecting 5 req/min (12s gap).
+    suspend fun fetchAllUsStocks(): List<TickerItem> {
+        val all = mutableListOf<TickerItem>()
+        val apiKey = getApiKey()
+        var resp = api.getAllUsStocks(apiKey = apiKey)
+        all += resp.res
+
+        // 5 calls/min ⇒ ~12s between calls
+        while (resp.next_url != null) {
+            delay(12_000L)
+            resp = api.pageByNextUrl(resp.next_url!!, apiKey)
+            all += resp.res
+        }
+        return all
+    }
+*/
+
 }
