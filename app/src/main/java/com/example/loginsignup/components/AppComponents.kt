@@ -384,7 +384,7 @@ fun AddWatchlistItemDialog(
         }
     }
 
-    val canConfirm = searchQuery.isNotBlank()
+    val canConfirm = searchQuery.isNotBlank() && name.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
