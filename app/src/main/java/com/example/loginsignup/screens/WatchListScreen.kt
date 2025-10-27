@@ -104,7 +104,7 @@ fun WatchListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(inner)
-                .background(Color(0xFF0F1115))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             if (rows.isEmpty()) {
                 Box(

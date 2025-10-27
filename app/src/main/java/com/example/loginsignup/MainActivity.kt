@@ -8,20 +8,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.loginsignup.viewModels.AuthViewModel
 import com.example.loginsignup.navigation.AppNavHost
+import com.example.loginsignup.ui.theme.MyAppTheme
 
 class MainActivity : ComponentActivity()
 {
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
-        setContent{
+        setContent {
             val vm: AuthViewModel = viewModel()
-
-            // 2) Observe sign-in state (lifecycle-aware)
             val isSignedIn by vm.isSignedIn.collectAsStateWithLifecycle()
 
-            // 3) Pass it down
-            AppNavHost( false)
+            MyAppTheme {
+                AppNavHost(isSignedIn = isSignedIn)
+            }
         }
     }
 }

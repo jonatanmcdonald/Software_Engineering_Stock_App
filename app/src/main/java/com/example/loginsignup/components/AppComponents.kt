@@ -75,7 +75,7 @@ fun NormalTextComponent(value: String){
             fontWeight = FontWeight.Normal,
             fontStyle = FontStyle.Normal
         )
-    ,   color = Color.Black,
+    ,   color = Color.White,
         textAlign = TextAlign.Center
     )
 }
@@ -93,7 +93,7 @@ fun HeadingTextComponent(value: String){
             fontWeight = FontWeight.Bold,
             fontStyle = FontStyle.Normal
         )
-        ,   color = Color.Black,
+        ,   color = Color.White,
         textAlign = TextAlign.Center
     )
 }
@@ -134,7 +134,8 @@ fun MyTextField(labelValue: String, painterResource: Painter) {
 fun MyTextField(labelValue: String,
                 painterResource: Painter,
                 textValue: String,
-                onValueChange: (String) -> Unit)
+                onValueChange: (String) -> Unit
+)
 {
 
 
@@ -144,10 +145,15 @@ fun MyTextField(labelValue: String,
         value = textValue,
         onValueChange = onValueChange,
         colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = Color.Green,
-            focusedLabelColor = Color.Green,
-            cursorColor = Color.Green,
-            unfocusedContainerColor = Color.LightGray
+            focusedContainerColor = Color(0xFF1A1D23),
+            unfocusedContainerColor =  Color(0xFF1A1D23),
+            focusedIndicatorColor =  Color(0xFF00E0C7),
+            unfocusedIndicatorColor = Color(0xFF2B2F36),
+            focusedTextColor = Color(0xFFFFFFFF),
+            unfocusedTextColor = Color(0xFFFFFFFF),
+            cursorColor = Color(0xFF00E0C7),
+            focusedLabelColor = Color(0xFF00E0C7),
+            unfocusedLabelColor = Color(0xFF9CA3AF)
 
         ),
         leadingIcon = {
@@ -222,15 +228,21 @@ fun PasswordTextFieldComponent(labelValue: String,
     }
 
     OutlinedTextField(
+
         modifier = Modifier.fillMaxWidth(),
         label = { Text(text = labelValue) },
         value = password,
         onValueChange = onPasswordChange,
         colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = Color.Green,
-            focusedLabelColor = Color.Green,
-            cursorColor = Color.Green,
-            unfocusedContainerColor = Color.LightGray
+            focusedContainerColor = Color(0xFF1A1D23),
+            unfocusedContainerColor =  Color(0xFF1A1D23),
+            focusedIndicatorColor =  Color(0xFF00E0C7),
+            unfocusedIndicatorColor = Color(0xFF2B2F36),
+            focusedTextColor = Color(0xFFFFFFFF),
+            unfocusedTextColor = Color(0xFFFFFFFF),
+            cursorColor = Color(0xFF00E0C7),
+            focusedLabelColor = Color(0xFF00E0C7),
+            unfocusedLabelColor = Color(0xFF9CA3AF)
 
         ),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),

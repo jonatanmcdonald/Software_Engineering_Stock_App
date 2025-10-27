@@ -4,12 +4,17 @@ import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -97,16 +103,20 @@ fun SignUpScreen(onViewTerms: () -> Unit,
     Surface(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .padding(28.dp)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+            verticalArrangement = Arrangement.spacedBy(12.dp) // space between buttons
+        ) {
             NormalTextComponent(value = stringResource(id = R.string.hello))
             HeadingTextComponent(value = stringResource(id = R.string.create_account))
 
             Spacer(modifier = Modifier.height(20.dp))
 
             MyTextField(
+
                 labelValue = stringResource(id = R.string.first_name),
                 painterResource(id = R.drawable.user_icon),
                 textValue = firstName,
@@ -115,16 +125,18 @@ fun SignUpScreen(onViewTerms: () -> Unit,
             )
 
             MyTextField(
-                labelValue = stringResource(id =R.string.last_name),
+                labelValue = stringResource(id = R.string.last_name),
                 painterResource(id = R.drawable.user_icon),
                 textValue = lastName,
-                onValueChange = {lastName = it})
+                onValueChange = {lastName = it}
+            )
 
             MyTextField(
                 labelValue = stringResource(id =R.string.email),
                 painterResource(id = R.drawable.email_symbol),
                 textValue = email,
-                onValueChange = {email = it})
+                onValueChange = {email = it}
+            )
 
             PasswordTextFieldComponent(
                 labelValue = stringResource(id =R.string.password),
@@ -133,7 +145,8 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                 onPasswordChange = {password = it}
             )
 
-            Button(onClick = {
+            Button(
+                onClick = {
                 when {
                     !isValidEmail(email) -> {
                         Toast.makeText(context, "Email is invalid", Toast.LENGTH_SHORT).show()
@@ -172,21 +185,47 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                     }
                 }
 
-            }){
-                    Text(text = "Sign Up")
+            }, modifier = Modifier
+                .fillMaxWidth()      // full width
+                .height(56.dp),      // large height
+                shape = RectangleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00E0C7), // teal accent
+                    contentColor = Color.Black          // text color
+                ), contentPadding = PaddingValues(vertical = 12.dp)
+            ){
+                    Text(text = "Sign Up", fontSize = 18.sp)
             }
 
             Button(onClick = {
                 // Check if the user is signed in
                 onViewSignIn()
-            }) {
-                Text(text = "Sign In", fontSize = 20.sp)
+            }, modifier = Modifier
+                .fillMaxWidth()      // full width
+                .height(56.dp),      // large height
+                shape = RectangleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00E0C7), // teal accent
+                    contentColor = Color.Black          // text color
+                ), contentPadding = PaddingValues(vertical = 12.dp)
+            )
+            {
+                Text(text = "Sign In", fontSize = 18.sp)
             }
 
             Button(onClick = {
                 onViewTerms()
-            }) {
-                Text(text = "Go to Terms and Condition", fontSize = 20.sp)
+            }, modifier = Modifier
+                .fillMaxWidth()      // full width
+                .height(56.dp),      // large height
+                shape = RectangleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00E0C7), // teal accent
+                    contentColor = Color.Black          // text color
+                ), contentPadding = PaddingValues(vertical = 12.dp)
+            )
+            {
+                Text(text = "Go to Terms and Condition", fontSize = 18.sp)
             }
         }
 
