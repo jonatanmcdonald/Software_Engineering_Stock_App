@@ -93,18 +93,18 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
             val existingById = current.associateBy { it.id }
             watchlist.map { w ->
                 val prev = existingById[w.id]
-                prev?.// existing item → keep live fields, refresh static labels
-                copy(
-                    name = w.name,
-                    ticker = w.ticker,
+                prev?.copy(
+                    // existing item → keep live fields, refresh static labels
+                    name = w.name ?: "",
+                    ticker = w.ticker ?: "",
                     note = w.note
                     // price/change/isUp preserved
                 )
                     ?: // new item → seed placeholder (keeps UI smooth; prices come in live)
                     WatchUi(
                         id = w.id,
-                        name = w.name,
-                        ticker = w.ticker,
+                        name = w.name ?: "",
+                        ticker = w.ticker ?: "",
                         note = w.note,
                         price = null,
                         change = null,
@@ -170,7 +170,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         val existing = _watchRows.value.find { it.id == w.id }
         return try {
 
-           val resp = repository.fetchPrice(w.ticker)
+           val resp = repository.fetchPrice(w.ticker ?: "")
             val latestPx: Double? = resp.price
             val change: Double? = resp.change
             val changePc: Double? = resp.percentChange
@@ -179,8 +179,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
 
             WatchUi(
                 id = w.id,
-                name = w.name,
-                ticker = w.ticker,
+                name = w.name ?: "",
+                ticker = w.ticker ?: "",
                 note = w.note,
                 price = latestPx,
                 change = change,
@@ -191,8 +191,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
             // Fall back to whatever we had
             existing ?: WatchUi(
                 id = w.id,
-                name = w.name,
-                ticker = w.ticker,
+                name = w.name ?: "",
+                ticker = w.ticker ?: "",
                 note = w.note,
                 price = null,
                 change = null,

@@ -13,9 +13,9 @@ data class WatchListWithSymbol(
     val id: Long,
     val userId: String,
     val stockId: Long,
-    val name: String,
-    val note: String,
+    val name: String?,
+    val note: String?,
     val createdAt: Long,
     val updatedAt: Long,
-    val ticker: String
+    val ticker: String?
 )
