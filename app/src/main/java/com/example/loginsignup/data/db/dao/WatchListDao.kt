@@ -63,12 +63,27 @@ interface WatchListDao {
     """)
     fun getWatchListItemWithSymbol(userId: String, stockId: Long): LiveData<WatchListWithSymbol?>
 
-    @Query("""
+    /*@Query("""
           SELECT w.id, w.userId, w.stockId, w.name, w.note, w.createdAt, w.updatedAt, s.ticker
           FROM watchlist w JOIN stocks s ON s.id = w.stockId
           WHERE w.userId = :userId
           ORDER BY w.updatedAt DESC, w.createdAt DESC
-        """)
+        """)*/
+    @Query("""
+    SELECT 
+        w.id AS id,
+        w.userId AS userId,
+        w.stockId AS stockId,
+        COALESCE(w.name, '') AS name,
+        w.note AS note,
+        w.createdAt AS createdAt,
+        w.updatedAt AS updatedAt,
+        COALESCE(s.ticker, '') AS ticker
+    FROM watchlist w 
+    JOIN stocks s ON s.id = w.stockId
+    WHERE w.userId = :userId
+    ORDER BY w.updatedAt DESC, w.createdAt DESC
+""")
     fun observeAllForUser(userId: String): Flow<List<WatchListWithSymbol>>
 
 }
