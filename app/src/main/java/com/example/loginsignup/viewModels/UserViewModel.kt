@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
+import com.example.loginsignup.data.db.dao.TransactionRecordsDao
 import com.example.loginsignup.data.db.entity.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,7 +33,8 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
         val userDao = StockAppDatabase.getDatabase(application).userDao()
         val watchListDao = StockAppDatabase.getDatabase(application).watchListDao()
         val stockDao = StockAppDatabase.getDatabase(application).stockDao()
-        repository = StockAppRepository(userDao, watchListDao, stockDao)
+        val transactionRecordsDao = StockAppDatabase.getDatabase(application).transactionRecordsDao()
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionRecordsDao)
         readAllData = repository.readAllData
     }
 

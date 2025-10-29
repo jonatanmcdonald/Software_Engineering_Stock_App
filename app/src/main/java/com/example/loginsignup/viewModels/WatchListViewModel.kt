@@ -56,8 +56,9 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         val userDao = db.userDao()
         val watchListDao = db.watchListDao()
         val stockDao = db.stockDao()
+        val transactionRecordsDao = db.transactionRecordsDao()
 
-        repository = StockAppRepository(userDao, watchListDao, stockDao)
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionRecordsDao)
 
         // Search pipeline (single source of truth = `searchQuery`)
         viewModelScope.launch {

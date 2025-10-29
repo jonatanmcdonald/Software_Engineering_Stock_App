@@ -39,50 +39,6 @@ import com.example.loginsignup.components.PasswordTextFieldComponent
 import com.example.loginsignup.data.db.entity.User
 import com.example.loginsignup.viewModels.UserViewModel
 
-/*
-@Composable
-fun SignUpScreen(navController: NavHostController) {
-
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(28.dp)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            NormalTextComponent(value = stringResource(id = R.string.hello))
-            HeadingTextComponent(value = stringResource(id = R.string.create_account))
-            Spacer(modifier = Modifier.height(20.dp))
-            MyTextField(
-                labelValue = stringResource(id = R.string.first_name),
-                painterResource(id = R.drawable.user_icon))
-
-            MyTextField(
-                labelValue = stringResource(id =R.string.last_name),
-                painterResource(id = R.drawable.user_icon))
-
-            MyTextField(
-                labelValue = stringResource(id =R.string.email),
-                painterResource(id = R.drawable.email_symbol))
-
-
-            PasswordTextFieldComponent(
-                labelValue = stringResource(id =R.string.password),
-                painterResource(id = R.drawable.lock_icon)
-            )
-
-
-
-            Button(onClick = {
-                navController.navigate("TermsAndConditionsScreen")
-            }) {
-                Text(text = "Go to Terms and Condition", fontSize = 20.sp)
-            }
-        }
-
-    }
-}*/
-
 fun isValidEmail(email: String): Boolean {
     return Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }

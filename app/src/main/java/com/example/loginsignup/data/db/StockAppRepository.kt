@@ -2,9 +2,11 @@ package com.example.loginsignup.data.db
 
 import androidx.lifecycle.LiveData
 import com.example.loginsignup.data.db.dao.StockDao
+import com.example.loginsignup.data.db.dao.TransactionRecordsDao
 import com.example.loginsignup.data.db.dao.UserDao
 import com.example.loginsignup.data.db.dao.WatchListDao
 import com.example.loginsignup.data.db.entity.Stock
+import com.example.loginsignup.data.db.entity.TransactionRecords
 import com.example.loginsignup.data.db.entity.User
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
@@ -13,7 +15,10 @@ import com.example.loginsignup.data.models.RetrofitInstance.api
 import com.example.loginsignup.data.models.RetrofitInstance.getApiKey
 import kotlinx.coroutines.flow.Flow
 
-class StockAppRepository(private val userDao: UserDao, private val watchListDao: WatchListDao, private val stockDao: StockDao) {
+class StockAppRepository(private val userDao: UserDao,
+                         private val watchListDao: WatchListDao,
+                         private val stockDao: StockDao,
+                         private val transactionRecordsDao: TransactionRecordsDao) {
 
     val readAllData: LiveData<List<User>> = userDao.readAllData()
 
@@ -89,6 +94,30 @@ class StockAppRepository(private val userDao: UserDao, private val watchListDao:
 
     suspend fun getStockId( ticker: String): Long {
         return stockDao.getStockId(ticker)
+    }
+
+    suspend fun insertTransaction(transaction: TransactionRecords) {
+        transactionRecordsDao.insertTransaction(transaction)
+    }
+
+    fun getTransactions(userId: Int): Flow<List<TransactionRecords>> {
+        return transactionRecordsDao.getTransactions(userId)
+    }
+
+    fun getTransactionsAlphabetical(userId: Int): Flow<List<TransactionRecords>> {
+        return transactionRecordsDao.getTransactionsAlphabetical(userId)
+    }
+
+    suspend fun getTransactionById(id: Int): TransactionRecords? {
+        return transactionRecordsDao.getTransactionById(id)
+    }
+
+    suspend fun updateTransaction(transaction: TransactionRecords) {
+        transactionRecordsDao.updateTransaction(transaction)
+    }
+
+    suspend fun deleteTransaction(transaction: TransactionRecords) {
+        transactionRecordsDao.deleteTransaction(transaction)
     }
 
     fun observeAllForUsers(userId: String): Flow<List<WatchListWithSymbol>> {

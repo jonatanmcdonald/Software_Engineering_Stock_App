@@ -18,8 +18,10 @@ import com.example.loginsignup.components.AppBottomBar
 import com.example.loginsignup.screens.DetailsScreen
 import com.example.loginsignup.screens.HomeScreen
 import com.example.loginsignup.screens.LogInScreen
+import com.example.loginsignup.screens.PortfolioScreen
 import com.example.loginsignup.screens.SignUpScreen
 import com.example.loginsignup.screens.TermsAndConditionsScreen
+import com.example.loginsignup.screens.TransactionRecords
 import com.example.loginsignup.screens.WatchListScreen
 
 
@@ -35,7 +37,7 @@ fun AppNavHost(isSignedIn: Boolean) {
     // observe current route for showing the bottom bar
     val backEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backEntry?.destination?.route
-    val tabRoutes = listOf(MainDest.HOME, MainDest.WATCHLIST, MainDest.PROFILE)
+    val tabRoutes = listOf(MainDest.HOME, MainDest.WATCHLIST, MainDest.PORTFOLIO)
     val showBottomBar = currentRoute in tabRoutes
 
     Scaffold(
@@ -106,6 +108,17 @@ fun AppNavHost(isSignedIn: Boolean) {
             }
             composable(MainDest.WATCHLIST) { WatchListScreen("0", onViewDetails = { id -> navController.navigate(Routes.details(id))})}
             composable(MainDest.PROFILE) { ProfileScreen() }
+
+            composable(MainDest.PORTFOLIO) {
+                PortfolioScreen(
+                    userViewModel = viewModel(),
+                    onViewTransactions = { navController.navigate(MainDest.TRANSACTIONS) }
+                )
+            }
+
+            composable(MainDest.TRANSACTIONS) {
+                TransactionRecords()
+            }
         }
     }
 }

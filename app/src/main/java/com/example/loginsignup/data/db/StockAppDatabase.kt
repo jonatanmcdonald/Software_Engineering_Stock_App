@@ -5,22 +5,27 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.loginsignup.data.db.dao.StockDao
+import com.example.loginsignup.data.db.dao.TransactionRecordsDao
 import com.example.loginsignup.data.db.entity.User
 import com.example.loginsignup.data.db.dao.UserDao
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.dao.WatchListDao
 import com.example.loginsignup.data.db.entity.Stock
+import com.example.loginsignup.data.db.entity.TransactionRecords
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
 
 
 
-@Database(entities = [User::class, WatchList::class, Stock::class], views = [WatchListWithSymbol::class], version = 5, exportSchema = false)
+@Database(entities = [User::class, WatchList::class, Stock::class, TransactionRecords::class], views = [WatchListWithSymbol::class],
+    version = 6,
+    exportSchema = false)
+
 abstract class StockAppDatabase: RoomDatabase() {
 
     abstract fun userDao(): UserDao
     abstract fun watchListDao(): WatchListDao
-
     abstract fun stockDao(): StockDao
+    abstract fun transactionRecordsDao(): TransactionRecordsDao
 
 
     companion object{
@@ -37,7 +42,9 @@ abstract class StockAppDatabase: RoomDatabase() {
                                 context.applicationContext,
                                 StockAppDatabase::class.java,
                                 "stock_app_database"
-                            ).createFromAsset("stock_app_database").fallbackToDestructiveMigration(true).build()
+                            ).createFromAsset("stock_app_database")
+                    .fallbackToDestructiveMigration(true)
+                    .build()
                 INSTANCE = instance
                 return instance
             }
