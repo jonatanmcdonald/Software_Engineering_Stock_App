@@ -1,5 +1,7 @@
 package com.example.loginsignup.navigation
 
+import android.net.Uri
+
 object Graph {
     const val AUTH = "auth"
     const val MAIN = "main"
@@ -16,7 +18,13 @@ object AuthDest {
 object MainDest {
     const val ROOT = "main_root"
     const val HOME = "home"
-    const val DETAILS = "details"
+
+    const val DETAILS = "details/{ticker}/{userId}"
     const val WATCHLIST = "watchlist"
     const val PROFILE = "profile"
+    const val SEARCH = "search"
+
+    fun details(ticker: String, userId: Int) = "details/${Uri.encode(ticker)}/${userId}"
+
 }
+

@@ -10,6 +10,7 @@ data class TickersResp (
     @SerializedName("count")
     val count: Int,
 )
+
 data class TickerItem(
     @SerializedName("ticker") val ticker: String,
     @SerializedName("name") val name: String,
@@ -24,7 +25,7 @@ data class TickerItem(
 
 data class LastQuote(
     @SerializedName("c")
-    val price: Double?,
+    val price: Double,
     @SerializedName("d")
     val change: Double?,
     @SerializedName("dp")
@@ -38,3 +39,32 @@ data class LastQuote(
     @SerializedName("pc")
     val pcPrice: Double?,
 )
+
+data class Profile(
+    @SerializedName("country")
+    val country: String?,
+    @SerializedName("currency")
+    val currency: String?,
+    @SerializedName("exchange")
+    val exchange: String?,
+    @SerializedName("finnhubIndustry")
+    val finnhubIndustry: String?,
+    @SerializedName("ipo")
+    val ipo: String?,
+    @SerializedName("logo")
+    val logo: String?,
+    @SerializedName("marketCapitalization")
+    val marketCapitalization: Double?,
+    @SerializedName("name")
+    val name: String?,
+    @SerializedName("phone")
+    val phone: String?,
+    @SerializedName("shareOutstanding")
+    val shareOutstanding: Double?,
+    @SerializedName("ticker")
+    val ticker: String?,
+    @SerializedName("weburl")
+    val weburl: String?
+)
+{}
+

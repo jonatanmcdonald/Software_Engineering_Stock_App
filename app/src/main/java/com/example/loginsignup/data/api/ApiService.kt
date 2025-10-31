@@ -1,6 +1,7 @@
 package com.example.loginsignup.data.api
 
 import com.example.loginsignup.data.models.LastQuote
+import com.example.loginsignup.data.models.Profile
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -30,5 +31,11 @@ interface ApiService {
         @Query("symbol") symbol: String,
         @Query("token") token: String
     ): LastQuote
+
+    @GET("stock/profile2")
+    suspend fun getProfile(
+        @Query("symbol") symbol: String,
+        @Query("token") token: String
+    ): Profile
 
 }

@@ -15,19 +15,15 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.loginsignup.components.AppBottomBar
+import com.example.loginsignup.navigation.MainDest.details
 import com.example.loginsignup.screens.DetailsScreen
-import com.example.loginsignup.screens.HomeScreen
 import com.example.loginsignup.screens.LogInScreen
+import com.example.loginsignup.screens.PortfolioScreen
+import com.example.loginsignup.screens.SearchScreen
 import com.example.loginsignup.screens.SignUpScreen
 import com.example.loginsignup.screens.TermsAndConditionsScreen
 import com.example.loginsignup.screens.WatchListScreen
 
-
-private object Routes {
-    const val DetailsPattern = "screen/details/{id}"
-    fun details(id: String) =
-        "screen/details/${Uri.encode(id)}"
-}
 @Composable
 fun AppNavHost(isSignedIn: Boolean) {
     val navController = rememberNavController()
@@ -91,20 +87,26 @@ fun AppNavHost(isSignedIn: Boolean) {
 
             // ---- MAIN tabs ----
             composable(MainDest.HOME) {
-                HomeScreen(
-                    //onOpenDetails = { id -> navController.navigate("home/details/$id") }
+                PortfolioScreen(
+                    1,
+                    onNavigateToSearch = { navController.navigate(MainDest.SEARCH) }
                 )
             }
+
+            composable(MainDest.SEARCH) { SearchScreen(onBack = { navController.popBackStack()}, onNavigateToDetails = {ticker: String -> navController.navigate(details(ticker, 1))})}
             composable(
-                route = Routes.DetailsPattern,
+                route = MainDest.DETAILS,
                 arguments = listOf(
-                    navArgument("id") { type = NavType.StringType }
+                    navArgument("ticker") { type = NavType.StringType },
+                    navArgument("userId"){type = NavType.IntType}
                 )
             ) { backStackEntry ->
-                val id = backStackEntry.arguments?.getString("id").orEmpty()
-                DetailsScreen(id = id, userId = "0", onBack = { navController.popBackStack() })
+                val args = requireNotNull(backStackEntry.arguments)
+                val ticker = requireNotNull(args.getString("ticker"))
+                val userId = requireNotNull(args.getInt("userId"))
+                DetailsScreen(ticker = ticker, userId = userId, onBack = { navController.navigate(MainDest.HOME) })
             }
-            composable(MainDest.WATCHLIST) { WatchListScreen("0", onViewDetails = { id -> navController.navigate(Routes.details(id))})}
+            composable(MainDest.WATCHLIST) { WatchListScreen(1)}
             composable(MainDest.PROFILE) { ProfileScreen() }
         }
     }

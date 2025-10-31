@@ -13,6 +13,12 @@ import androidx.room.PrimaryKey
             parentColumns = ["id"],
             childColumns = ["stockId"],
             onDelete = ForeignKey.Companion.CASCADE
+        ),
+        ForeignKey(
+            entity = User::class,
+            parentColumns = ["id"],
+            childColumns = ["userId"],
+            onDelete = ForeignKey.Companion.CASCADE
         )
     ],
     indices = [
@@ -27,7 +33,7 @@ import androidx.room.PrimaryKey
 data class WatchList(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,          // surrogate PK
-    val userId: String,           // set from the logged-in user
+    val userId: Int,           // set from the logged-in user
     val name: String,
     val note: String? = null,
     val stockId: Long,

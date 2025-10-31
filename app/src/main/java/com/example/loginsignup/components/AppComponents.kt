@@ -452,7 +452,7 @@ fun AddWatchlistItemDialog(
                                 text = { Text("${stock.name} (${stock.ticker})") },
                                 onClick = {
                                     onStockSelected(stock)
-                                    onQueryChange(stock.ticker)
+                                    //onQueryChange(stock.ticker)
                                     expanded = false // close after pick
                                 }
                             )

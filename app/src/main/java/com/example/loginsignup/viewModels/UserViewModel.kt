@@ -32,15 +32,11 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
         val userDao = StockAppDatabase.getDatabase(application).userDao()
         val watchListDao = StockAppDatabase.getDatabase(application).watchListDao()
         val stockDao = StockAppDatabase.getDatabase(application).stockDao()
-        repository = StockAppRepository(userDao, watchListDao, stockDao)
-        readAllData = repository.readAllData
-    }
+        val transactionDao = StockAppDatabase.getDatabase(application).transactionDao()
+        val portfolioDao = StockAppDatabase.getDatabase(application).portfolioDao()
 
-    //Not really used anymore
-    fun addUser(user: User){
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.addUser(user)
-        }
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao)
+        readAllData = repository.readAllData
     }
 
     fun login(email: String, password: String) {

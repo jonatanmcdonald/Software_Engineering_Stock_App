@@ -11,7 +11,7 @@ import androidx.room.DatabaseView
 """)
 data class WatchListWithSymbol(
     val id: Long,
-    val userId: String,
+    val userId: Int,
     val stockId: Long,
     val name: String?,
     val note: String?,

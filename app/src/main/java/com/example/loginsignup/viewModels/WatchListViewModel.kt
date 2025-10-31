@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.asFlow
+import com.example.loginsignup.App
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
 import com.example.loginsignup.data.db.entity.Stock
@@ -25,12 +26,10 @@ private const val CALLS_PER_MINUTE = 60              // your real limit
 private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class WatchListViewModel(application: Application) : AndroidViewModel(application) {
-
-    // Toggle this if you want to seed the DB once
-    private val first = false
+    private val limiter = (application as App).rateLimiter
     private var priceJob: Job? = null
-    private val newDay = false
     private val debounceDuration = 500L
+    private val ignoreNextSearch = MutableStateFlow(false)
 
     // --- Search state exposed to UI ---
     private val _stockList = MutableStateFlow<List<Stock>>(emptyList())
@@ -38,6 +37,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
 
     // The chosen stock from the search results (for add/edit actions)
     private val _selectedStock = MutableStateFlow<Stock?>(null)
+
 
     private val _watchRows = MutableStateFlow<List<WatchUi>>(emptyList())
     val watchRows: StateFlow<List<WatchUi>> = _watchRows.asStateFlow()
@@ -56,29 +56,34 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         val userDao = db.userDao()
         val watchListDao = db.watchListDao()
         val stockDao = db.stockDao()
+        val transactionDao = db.transactionDao()
+        val portfolioDao = db.portfolioDao()
 
-        repository = StockAppRepository(userDao, watchListDao, stockDao)
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao)
 
         // Search pipeline (single source of truth = `searchQuery`)
         viewModelScope.launch {
-
-            searchQuery
+            combine(searchQuery, ignoreNextSearch) { q, ignore -> q to ignore }
                 .debounce(debounceDuration)
-                .map { it.trim() }
-                .distinctUntilChanged()
-                .flatMapLatest { q ->
+                .map { (q, ignore) -> (q.trim() to ignore) }
+                .distinctUntilChanged { old, new -> old.first == new.first } // only care if text changed
+                .transformLatest { (q, ignore) ->
+                    if (ignore) {
+                        // consume exactly this emission (the programmatic set), then clear the flag
+                        ignoreNextSearch.value = false
+                        return@transformLatest
+                    }
                     if (q.isBlank() || q.length < 2) {
-                        flowOf(emptyList())
+                        emit(emptyList<Stock>())
                     } else {
-                        // If repository.searchStocks returns LiveData<List<Stock>>:
-                        repository.searchStocks(q).asFlow()
-                        // If it returns Flow<List<Stock>> instead, use:
-                        // repository.searchStocks(q)
+                        // If repository.searchStocks returns LiveData:
+                        emitAll(repository.searchStocks(q).asFlow())
+                        // If Flow: emitAll(repository.searchStocks(q))
                     }
                 }
                 .catch { _stockList.value = emptyList() }
                 .onEach { results -> _stockList.value = results }
-                .launchIn(viewModelScope) // launch the collection once
+                .launchIn(this)
         }
 
         //if (first) {
@@ -106,7 +111,6 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                         name = w.name ?: "",
                         ticker = w.ticker ?: "",
                         note = w.note,
-                        price = null,
                         change = null,
                         changePercent = null,
                         isUp = null
@@ -116,7 +120,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /** Call this once when the screen opens (pass the signed-in user's id). */
-    fun startWatchlistPriceUpdate(userId: String) {
+    fun startWatchlistPriceUpdate(userId: Int) {
         priceJob?.cancel()
         priceJob = viewModelScope.launch {
             // 1) Keep a live, mutable snapshot of the current watchlist for rotation
@@ -170,8 +174,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         val existing = _watchRows.value.find { it.id == w.id }
         return try {
 
-           val resp = repository.fetchPrice(w.ticker ?: "")
-            val latestPx: Double? = resp.price
+           val resp = limiter.run{repository.fetchPrice(w.ticker ?: "")}
+            val latestPx: Double = resp.price
             val change: Double? = resp.change
             val changePc: Double? = resp.percentChange
            // Log.d("WatchListViewModel", "updateOneRow: $resp")
@@ -194,7 +198,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 name = w.name ?: "",
                 ticker = w.ticker ?: "",
                 note = w.note,
-                price = null,
+                price = 0.0,
                 change = null,
                 changePercent = null,
                 isUp = null
@@ -219,62 +223,16 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     suspend fun getStockId(symbol: String): Long =
         repository.getStockId(symbol)
 
-    suspend fun existsForUser(userId: String, stockId: Long): Boolean =
-        repository.existsForUser(userId, stockId)
-
-    fun getAllForUser(id: String): LiveData<List<WatchList>> =
-        repository.getAllForUser(id)
-
-    fun getWatchListItem(id: String, itemId: Long): LiveData<WatchList?> =
-        repository.getWatchListItem(id, itemId)
-
     fun delete(itemId: Long) = viewModelScope.launch {
         // instantly remove from UI
         _watchRows.update { it.filterNot { row -> row.id == itemId } }
         repository.deleteWatchListItem(itemId)
     }
 
-    fun getAllForUserWithSymbol(userId: String): LiveData<List<WatchListWithSymbol>> =
-        repository.getAllForUserWithSymbol(userId)
-
-    fun getWatchListItemWithSymbol(userId: String, stockId: Long): LiveData<WatchListWithSymbol?> =
-        repository.getWatchListItemWithSymbol(userId, stockId)
-
-    suspend fun getStockSymbol(stockId: Long): String =
-        repository.getStockSymbol(stockId)
-
-    // --- Seed list ---
-    /*
-    private suspend fun insertStocks() {
-        try {
-            val resp = repository.fetchAllUsStocks()
-            val rows = resp.map{
-                Stock(
-                    ticker = it.ticker,
-                    name = it.name,
-                    market = it.market,
-                    locale = it.locale,
-                    type = it.type,
-                    currencyName = it.currencyName,
-                    primaryExchange = it.primaryExchange
-                )
-
-            }
-
-            if (rows.isNotEmpty()) {
-                repository.upsertAll(rows)
-            }
-        }
-        catch (t: Throwable) {
-            Log.d("Insert Failed", "insertStocks: ${t.message}")
-        }
-
-    }
-    */
-
 
     fun onStockSelected(stock: Stock) {
         _selectedStock.value = stock
+        ignoreNextSearch.value = true
         // Prefill the text field for UX (optional)
         _searchQuery.value = stock.ticker
         _stockList.value = emptyList()

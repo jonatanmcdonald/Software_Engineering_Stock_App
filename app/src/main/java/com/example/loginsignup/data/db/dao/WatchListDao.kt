@@ -25,7 +25,7 @@ interface WatchListDao {
         WHERE id = :itemId AND userId = :userId
     """)
     suspend fun updateWatchListItem(
-        userId: String,
+        userId: Int,
         itemId: Long,
         name: String,
         note: String?,
@@ -35,7 +35,7 @@ interface WatchListDao {
 
     // EXISTS
     @Query("SELECT EXISTS(SELECT 1 FROM watchlist WHERE userId = :userId AND stockId = :stockId LIMIT 1)")
-    suspend fun existsForUser(userId: String, stockId: Long): Boolean
+    suspend fun existsForUser(userId: Int, stockId: Long): Boolean
 
     // DELETE
     @Query("DELETE FROM watchlist WHERE id = :itemId")
@@ -43,10 +43,10 @@ interface WatchListDao {
 
     // READS (raw table rows)
     @Query("SELECT * FROM watchlist WHERE userId = :userId ORDER BY updatedAt DESC, createdAt DESC")
-    fun getAllForUser(userId: String): LiveData<List<WatchList>>
+    fun getAllForUser(userId: Int): LiveData<List<WatchList>>
 
     @Query("SELECT * FROM watchlist WHERE userId = :userId AND stockId = :stockId LIMIT 1")
-    fun getWatchListItem(userId: String, stockId: Long): LiveData<WatchList?>
+    fun getWatchListItem(userId: Int, stockId: Long): LiveData<WatchList?>
 
     // READS (JOINed view that already includes symbol) — use these in your UI!
     @Query("""
@@ -54,14 +54,14 @@ interface WatchListDao {
         WHERE userId = :userId
         ORDER BY updatedAt DESC, createdAt DESC
     """)
-    fun getAllForUserWithSymbol(userId: String): LiveData<List<WatchListWithSymbol>>
+    fun getAllForUserWithSymbol(userId: Int): LiveData<List<WatchListWithSymbol>>
 
     @Query("""
         SELECT * FROM WatchListWithSymbol
         WHERE userId = :userId AND stockId = :stockId
         LIMIT 1
     """)
-    fun getWatchListItemWithSymbol(userId: String, stockId: Long): LiveData<WatchListWithSymbol?>
+    fun getWatchListItemWithSymbol(userId: Int, stockId: Long): LiveData<WatchListWithSymbol?>
 
     /*@Query("""
           SELECT w.id, w.userId, w.stockId, w.name, w.note, w.createdAt, w.updatedAt, s.ticker
@@ -84,6 +84,6 @@ interface WatchListDao {
     WHERE w.userId = :userId
     ORDER BY w.updatedAt DESC, w.createdAt DESC
 """)
-    fun observeAllForUser(userId: String): Flow<List<WatchListWithSymbol>>
+    fun observeAllForUser(userId: Int): Flow<List<WatchListWithSymbol>>
 
 }

@@ -33,22 +33,22 @@ data class WatchRow(
 )
 
 data class WatchUi(
-    val id: Long,
-    val name: String,
-    val note: String?,
-    val ticker: String,
-    val price: Double?,        // latest close (or open if close missing)
-    val change: Double?,       // price - previous price
-    val changePercent: Double?,
-    val isUp: Boolean?         // null if change unknown
+    val id: Long = 0L,
+    val name: String = "",
+    val note: String? = null,
+    val ticker: String = "",
+    val price: Double = 0.0,        // latest close (or open if close missing)
+    val change: Double? = null,       // price - previous price
+    val changePercent: Double? = null,
+    val isUp: Boolean? = false         // null if change unknown
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WatchListScreen(
-    userId: String,
+    userId: Int,
     wvm: WatchListViewModel = viewModel(),
-    onViewDetails: (String) -> Unit
+   // onViewDetails: (String) -> Unit
 ) {
     LaunchedEffect(userId) { wvm.startWatchlistPriceUpdate(userId) }
     val rows by wvm.watchRows.collectAsState()
@@ -91,9 +91,7 @@ fun WatchListScreen(
                 containerColor = Color.Blue,
                 contentColor = Color.White,
                 onClick = {
-                    editing = null
                     wvm.onSearchQueryChanged("")
-                    showDialog = true
                 }
             ) { Icon(Icons.Default.Add, contentDescription = "Add") }
         },
@@ -132,15 +130,6 @@ fun WatchListScreen(
                             change = item.change,
                             changePercent = item.changePercent,
 
-                            //name = item.name,
-                           // note = item.note.orEmpty(),
-                            onEdit = {
-                               editing = WatchRow(
-                                   name = item.name,
-                                   note = item.note?.ifBlank { null },
-                                   ticker = item.ticker)
-
-                            },
                             onDelete = { wvm.delete(item.id) }
                         )
                     }
@@ -185,14 +174,11 @@ fun WatchListScreen(
 
 @Composable
 private fun WatchCard(
-    //name: String,
     symbol: String,
     price: Double?,
     change: Double?,
     changePercent: Double?,
     isUp: Boolean?,
-   // note: String,
-    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
 
