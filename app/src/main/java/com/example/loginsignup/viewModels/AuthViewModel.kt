@@ -9,5 +9,8 @@ class AuthViewModel: ViewModel() {
     private val _isSignedIn = MutableStateFlow(false)
     val isSignedIn: StateFlow<Boolean> = _isSignedIn.asStateFlow()
 
+    private val _userId = MutableStateFlow<Int> (-1)
+    val userId: StateFlow<Int> = _userId.asStateFlow()
+
 
 }
