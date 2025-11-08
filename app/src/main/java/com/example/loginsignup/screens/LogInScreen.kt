@@ -38,7 +38,6 @@ import com.example.loginsignup.components.MyTextField
 import com.example.loginsignup.components.NormalTextComponent
 import com.example.loginsignup.components.PasswordTextFieldComponent
 import com.example.loginsignup.viewModels.UserViewModel
-import kotlin.math.log
 
 @Composable
 fun LogInScreen(onSignedIn: () -> Unit,
@@ -110,8 +109,6 @@ fun LogInScreen(onSignedIn: () -> Unit,
                     //Log.d("Sign Up Screen",Email: $email, Password: $password")
                     userViewModel.login(email, password)
 
-                    //uncomment for testing homescreen
-                    onSignedIn()
                 },modifier = Modifier
                         .fillMaxWidth()      // full width
                     .height(56.dp),      // large height

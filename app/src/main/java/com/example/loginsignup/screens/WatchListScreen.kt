@@ -92,6 +92,7 @@ fun WatchListScreen(
                 contentColor = Color.White,
                 onClick = {
                     wvm.onSearchQueryChanged("")
+                    showDialog = true
                 }
             ) { Icon(Icons.Default.Add, contentDescription = "Add") }
         },
