@@ -8,6 +8,7 @@ import com.example.loginsignup.App
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
 import com.example.loginsignup.data.db.entity.Portfolio
+import com.example.loginsignup.data.db.entity.Transaction
 import com.example.loginsignup.screens.LivePortfolio
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -145,8 +146,9 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                 else -> existing?.prevClose ?: existing?.last
             }
 
-            val unrealized: Double?  = last?.let { (it - p.avg_cost) * p.qty }
             val marketValue: Double? = last?.let { it * p.qty }
+            val unrealized: Double?  = marketValue?.let { (it - p.avg_cost) * p.qty }
+
             val dayChange: Double?   = changePerShare?.let { it * p.qty }
             val totalPnl: Double?    = unrealized?.let { it + p.realized_pnl }
 
@@ -189,5 +191,17 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun sellStock(stockId: Long, qty: Double) = viewModelScope.launch {
+        try {
+            repository.sellStock(stockId, qty)
+
+        } catch (e: Throwable) {
+            Log.e("PortfolioViewModel", "Failed to sell stock: ${e.message}")
+        }
+    }
+
+    fun getTransForUser(userId: Int): Flow<List<Transaction>> {
+        return repository.getTransForUser(userId)
+    }
 
 }

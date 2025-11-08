@@ -15,6 +15,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.loginsignup.components.AppBottomBar
+import com.example.loginsignup.data.session.SessionManager
 import com.example.loginsignup.navigation.MainDest.details
 import com.example.loginsignup.screens.DetailsScreen
 import com.example.loginsignup.screens.LogInScreen
@@ -22,16 +23,19 @@ import com.example.loginsignup.screens.PortfolioScreen
 import com.example.loginsignup.screens.SearchScreen
 import com.example.loginsignup.screens.SignUpScreen
 import com.example.loginsignup.screens.TermsAndConditionsScreen
+import com.example.loginsignup.screens.TransactionScreen
 import com.example.loginsignup.screens.WatchListScreen
 
 @Composable
 fun AppNavHost(isSignedIn: Boolean) {
     val navController = rememberNavController()
 
+    val isSignedIn = SessionManager.isUserSignedIn()
+
     // observe current route for showing the bottom bar
     val backEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backEntry?.destination?.route
-    val tabRoutes = listOf(MainDest.HOME, MainDest.WATCHLIST, MainDest.PROFILE)
+    val tabRoutes = listOf(MainDest.HOME, MainDest.WATCHLIST, MainDest.TRANSACTION)
     val showBottomBar = currentRoute in tabRoutes
 
     Scaffold(
@@ -87,13 +91,20 @@ fun AppNavHost(isSignedIn: Boolean) {
 
             // ---- MAIN tabs ----
             composable(MainDest.HOME) {
+                val userId = SessionManager.getUserId() ?: return@composable
                 PortfolioScreen(
-                    1,
+                    userId = userId,
                     onNavigateToSearch = { navController.navigate(MainDest.SEARCH) }
                 )
             }
 
-            composable(MainDest.SEARCH) { SearchScreen(onBack = { navController.popBackStack()}, onNavigateToDetails = {ticker: String -> navController.navigate(details(ticker, 1))})}
+
+            composable(MainDest.SEARCH) {
+                val userId = SessionManager.getUserId() ?: return@composable
+                SearchScreen(onBack = { navController.popBackStack()},
+                    onNavigateToDetails = {ticker: String -> navController.navigate(details(
+                        ticker,
+                        userId))})}
             composable(
                 route = MainDest.DETAILS,
                 arguments = listOf(
@@ -106,8 +117,13 @@ fun AppNavHost(isSignedIn: Boolean) {
                 val userId = requireNotNull(args.getInt("userId"))
                 DetailsScreen(ticker = ticker, userId = userId, onBack = { navController.navigate(MainDest.HOME) })
             }
-            composable(MainDest.WATCHLIST) { WatchListScreen(1)}
-            composable(MainDest.PROFILE) { ProfileScreen() }
+            composable(MainDest.WATCHLIST) {
+                val userId = SessionManager.getUserId() ?: return@composable
+                WatchListScreen(userId)}
+
+            composable(MainDest.TRANSACTION) {
+                val userId = SessionManager.getUserId() ?: return@composable
+                TransactionScreen(userId = userId) }
         }
     }
 }

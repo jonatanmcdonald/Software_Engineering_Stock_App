@@ -2,9 +2,11 @@
 package com.example.loginsignup.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -13,10 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.room.util.TableInfo
 import com.example.loginsignup.viewModels.PortfolioViewModel
 import java.util.Locale
 import kotlin.math.absoluteValue
@@ -58,6 +62,8 @@ fun PortfolioScreen(
     val totalRealized = remember(rows) { rows.sumOf { it.realizedPnl } }
     val totalPnl = totalRealized + totalUnreal
     val dayPnl = remember(rows) { rows.sumOf { it.dayChange ?: 0.0 } }
+
+    var selectedStock by remember { mutableStateOf<LivePortfolio?>(null)}
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -122,9 +128,23 @@ fun PortfolioScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(rows, key = { it.id }) { item ->
-                        PortfolioCard(item)
+                        PortfolioCard(item) { clickedRow ->
+                            selectedStock = clickedRow
+                        }
                     }
                 }
+
+                if (selectedStock != null) {
+                    SellStockDialog(
+                        stock = selectedStock!!,
+                        onDismiss = {selectedStock = null},
+                        onConfirm = { qty ->
+                            pvm.sellStock(selectedStock!!.id, qty)
+                            selectedStock = null
+                        }
+                    )
+                }
+
             }
         }
     }
@@ -175,7 +195,10 @@ private fun Stat(label: String, value: String, color: Color) {
 
 // ---------- Row Card ----------
 @Composable
-private fun PortfolioCard(row: LivePortfolio) {
+private fun PortfolioCard(
+    row: LivePortfolio,
+    onClick: (LivePortfolio) -> Unit
+) {
     val isUp = row.unrealizedPnl?.let { it >= 0.0 }
     val color = when (isUp) {
         true  -> Color(0xFF16A34A)
@@ -186,7 +209,9 @@ private fun PortfolioCard(row: LivePortfolio) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF171A21)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick(row) }
     ) {
         Column(Modifier.padding(16.dp)) {
 
@@ -248,6 +273,45 @@ private fun LabeledValue(label: String, value: String, valueColor: Color) {
         Spacer(Modifier.height(4.dp))
         Text(value, color = valueColor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
     }
+}
+
+@Composable
+fun SellStockDialog(
+    stock: LivePortfolio,
+    onDismiss: () -> Unit,
+    onConfirm: (quantity: Double) -> Unit
+) {
+    var qtyToSell by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Sell ${stock.ticker}") },
+        text = {
+            Column {
+                Text("Available: ${fmtQty(stock.qty)} shares")
+                TextField(
+                    value = qtyToSell,
+                    onValueChange = {qtyToSell = it},
+                    label = { Text("Quantity to sell")},
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val qty = qtyToSell.toDoubleOrNull()
+                    if (qty != null && qty > 0 && qty <= stock.qty) {
+                        onConfirm(qty)
+                        onDismiss()
+                    }
+                }
+            ) { Text("Sell") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
 
 // ---------- Formatters ----------

@@ -24,6 +24,8 @@ object MainDest {
     const val PROFILE = "profile"
     const val SEARCH = "search"
 
+    const val TRANSACTION = "transaction"
+
     fun details(ticker: String, userId: Int) = "details/${Uri.encode(ticker)}/${userId}"
 
 }
