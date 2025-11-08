@@ -18,7 +18,11 @@ import com.example.loginsignup.data.models.RetrofitInstance.api
 import com.example.loginsignup.data.models.RetrofitInstance.getApiKey
 import kotlinx.coroutines.flow.Flow
 
-class StockAppRepository(private val userDao: UserDao, private val watchListDao: WatchListDao, private val stockDao: StockDao, private val transactionDao: TransactionDao, private val portfolioDao: PortfolioDao) {
+class StockAppRepository(private val userDao: UserDao,
+                         private val watchListDao: WatchListDao,
+                         private val stockDao: StockDao,
+                         private val transactionDao: TransactionDao,
+                         private val portfolioDao: PortfolioDao) {
 
     val readAllData: LiveData<List<User>> = userDao.readAllData()
 
@@ -94,5 +98,31 @@ class StockAppRepository(private val userDao: UserDao, private val watchListDao:
         return portfolioDao.getUserPortfolio(userId)
     }
 
+    suspend fun sellStock(stockId: Long, qty: Double) {
+        val portfolioItem = portfolioDao.getPortfolioById(stockId)
 
+        if (portfolioItem != null && qty <= portfolioItem.qty) {
+            val newQty = portfolioItem.qty - qty
+
+            if (newQty > 0) {
+                portfolioDao.updateQty(stockId, newQty)
+            } else {
+                portfolioDao.delete(portfolioItem)
+            }
+
+            val transaction = Transaction(
+                userId = portfolioItem.userId,
+                symbol = portfolioItem.symbol,
+                qty = qty.toInt(),
+                price = portfolioItem.avg_cost,
+                side = "SELL",
+                fees = 0.0,
+                timestamp = System.currentTimeMillis()
+            )
+            transactionDao.addTransaction(transaction)
+        } else {
+            throw IllegalArgumentException("Not enough shares to sell")
+        }
+    }
 }
+

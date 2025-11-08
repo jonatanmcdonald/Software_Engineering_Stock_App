@@ -38,6 +38,7 @@ import com.example.loginsignup.components.MyTextField
 import com.example.loginsignup.components.NormalTextComponent
 import com.example.loginsignup.components.PasswordTextFieldComponent
 import com.example.loginsignup.viewModels.UserViewModel
+import kotlin.math.log
 
 @Composable
 fun LogInScreen(onSignedIn: () -> Unit,
@@ -52,14 +53,25 @@ fun LogInScreen(onSignedIn: () -> Unit,
     val loginResult by userViewModel.loginResult.observeAsState()
     val context = LocalContext.current
 
-
+/*
     LaunchedEffect(loginResult) {
         if (loginResult == true) {
             Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
             onSignedIn()
         } else if (loginResult == false) {
             Toast.makeText(context, "Invalid email or password", Toast.LENGTH_SHORT). show()
+        }*/
+    LaunchedEffect(loginResult) {
+        when (loginResult) {
+            true -> {
+                Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
+                onSignedIn()
         }
+            false -> {
+                Toast.makeText(context, "Invalid email or password", Toast.LENGTH_SHORT). show()
+            }
+            null -> { }
+    }
 }
 
     Surface(

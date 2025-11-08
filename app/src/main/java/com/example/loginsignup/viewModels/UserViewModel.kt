@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
 import com.example.loginsignup.data.db.entity.User
+import com.example.loginsignup.data.session.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,8 +42,17 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
 
     fun login(email: String, password: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val user = repository.getUserByEmailAndPassword(email, password)
-            _loginResult.postValue(user != null)
+            val hashedPassword = hashPassword(password)
+            val user = repository.getUserByEmailAndPassword(email, hashedPassword)
+
+            if (user != null) {
+                SessionManager.startSession(user.id)
+
+                _loginResult.postValue(true)
+            } else {
+                _loginResult.postValue(false)
+            }
+
         }
     }
 
