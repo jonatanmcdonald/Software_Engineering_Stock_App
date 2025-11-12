@@ -11,6 +11,23 @@ data class TickersResp (
     val count: Int,
 )
 
+data class newsResp(
+    val res: List<NewsItem> = emptyList()
+)
+
+data class NewsItem(
+    @SerializedName("category") val category: String,
+    @SerializedName("datetime") val datetime: Long,
+    @SerializedName("headline") val headline: String,
+    @SerializedName("id") val id: Int,
+    @SerializedName("image") val image: String,
+    @SerializedName("related") val related: String,
+    @SerializedName("source") val source: String,
+    @SerializedName("summary") val summary: String,
+    @SerializedName("url") val url: String
+)
+
+
 data class TickerItem(
     @SerializedName("ticker") val ticker: String,
     @SerializedName("name") val name: String,

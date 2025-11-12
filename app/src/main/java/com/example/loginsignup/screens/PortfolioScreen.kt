@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.room.util.TableInfo
+import com.example.loginsignup.data.db.entity.Transaction
 import com.example.loginsignup.viewModels.PortfolioViewModel
 import java.util.Locale
 import kotlin.math.absoluteValue
@@ -139,7 +139,17 @@ fun PortfolioScreen(
                         stock = selectedStock!!,
                         onDismiss = {selectedStock = null},
                         onConfirm = { qty ->
-                            pvm.sellStock(selectedStock!!.id, qty)
+                            val pricePerShare = selectedStock!!.last!!
+                            val transaction = Transaction(
+                                qty = qty.toInt(),
+                                price = pricePerShare,
+                                timestamp = System.currentTimeMillis(),
+                                side = "SELL",
+                                symbol = selectedStock!!.ticker,
+                                fees = 0.0,
+                                userId = userId
+                            )
+                            pvm.saveSellTransaction(transaction)
                             selectedStock = null
                         }
                     )

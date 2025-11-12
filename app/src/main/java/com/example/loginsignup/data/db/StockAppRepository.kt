@@ -13,10 +13,12 @@ import com.example.loginsignup.data.db.entity.User
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
 import com.example.loginsignup.data.models.LastQuote
+import com.example.loginsignup.data.models.NewsItem
 import com.example.loginsignup.data.models.Profile
 import com.example.loginsignup.data.models.RetrofitInstance.api
 import com.example.loginsignup.data.models.RetrofitInstance.getApiKey
 import kotlinx.coroutines.flow.Flow
+
 
 class StockAppRepository(private val userDao: UserDao,
                          private val watchListDao: WatchListDao,
@@ -70,6 +72,14 @@ class StockAppRepository(private val userDao: UserDao,
     fun observeAllForUsers(userId: Int): Flow<List<WatchListWithSymbol>> {
         return watchListDao.observeAllForUser(userId)
     }
+
+    suspend fun getNewsThisMonth(): List<NewsItem>
+    {
+        val news = api.getNews(token = getApiKey())
+        //Log.d("StockAppRepository News", news.toString())
+        return news
+    }
+
 
      suspend fun fetchPrice(symbol: String): LastQuote =
          api.getLastQuote(symbol = symbol, token = getApiKey())

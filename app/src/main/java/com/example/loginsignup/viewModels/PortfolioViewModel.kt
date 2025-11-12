@@ -25,7 +25,6 @@ private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
 class PortfolioViewModel(application: Application) : AndroidViewModel(application) {
     private val limiter = (application as App).rateLimiter
     private var priceJob: Job? = null
-    private val debounceDuration = 500L
 
     private val _portfolioRows = MutableStateFlow<List<LivePortfolio>>(emptyList())
     val portfolioRows: StateFlow<List<LivePortfolio>> = _portfolioRows.asStateFlow()
@@ -136,7 +135,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         return try {
             val resp = limiter.run { repository.fetchPrice(p.symbol) } // network gated globally
 
-            val last: Double?        = resp.price
+            val last: Double        = resp.price
             val changePerShare: Double? = resp.change            // absolute per-share
             // Normalize percent: if API sends 0.0123 as fraction, convert to 1.23%
             val pct: Double? = resp.percentChange?.let { if (kotlin.math.abs(it) <= 1.0) it * 100.0 else it }
@@ -188,6 +187,13 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                 costBasis   = p.cost_basis,
                 realizedPnl = p.realized_pnl
             )
+        }
+    }
+
+    fun saveSellTransaction(transaction: Transaction)
+    {
+        viewModelScope.launch {
+            repository.addTransaction(transaction)
         }
     }
 

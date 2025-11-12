@@ -104,11 +104,21 @@ private fun installTriggers(db: SupportSQLiteDatabase) {
         END;
     """.trimIndent())
 
+    db.execSQL("""
+        CREATE TRIGGER IF NOT EXISTS trg_block_oversell
+        BEFORE INSERT ON transactions
+        WHEN UPPER(NEW.side)='SELL' AND
+             (SELECT IFNULL(qty,0) FROM portfolio WHERE userId=NEW.userId AND symbol=NEW.symbol) < NEW.qty
+        BEGIN
+          SELECT RAISE(ABORT, 'Insufficient shares to sell');
+        END;
+        """.trimIndent())
+
     // ---------- SELL: upsert (ensures row exists), then reduce qty/cost & realize PnL ----------
     db.execSQL("""
         CREATE TRIGGER IF NOT EXISTS trg_apply_sell
         AFTER INSERT ON transactions
-        WHEN UPPER(NEW.side) = 'SELL'
+        WHEN UPPER(NEW.side) = 'SELL' 
         BEGIN
           -- Ensure a row exists (if somehow selling first; qty will go negative)
           INSERT INTO portfolio(symbol, userId, qty, cost_basis, avg_cost, realized_pnl)
@@ -128,13 +138,14 @@ private fun installTriggers(db: SupportSQLiteDatabase) {
           WHERE symbol = NEW.symbol AND userId = NEW.userId;
 
           -- If qty ~ 0 after the sale, zero out basis/avg for a clean closed position
-          UPDATE portfolio
-          SET cost_basis = 0, avg_cost = 0
+          DELETE FROM portfolio
           WHERE symbol = NEW.symbol AND userId = NEW.userId AND ABS(qty) < 1e-9;
         END;
     """.trimIndent())
+
+    Log.d("StockAppDatabase", "Triggers installed")
 }
-val MIGRATION_X_Y = object : Migration(1, 14) {
+val MIGRATION_X_Y = object : Migration(1, 17) {
     override fun migrate(db: SupportSQLiteDatabase) {
 
         // Drop any old unique-on-symbol index (name may vary by Room version)
@@ -158,7 +169,7 @@ val MIGRATION_X_Y = object : Migration(1, 14) {
 @Database(
     entities = [User::class, WatchList::class, Stock::class, Portfolio::class, Transaction::class],
     views = [WatchListWithSymbol::class],
-    version = 14,
+    version = 17,
     exportSchema = false
 )
 abstract class StockAppDatabase : RoomDatabase() {
@@ -186,7 +197,7 @@ abstract class StockAppDatabase : RoomDatabase() {
                         // If you want to preserve prod data, add real migrations 2→6 (keep MIGRATION_1_2 if relevant)
                         .addMigrations(MIGRATION_X_Y)
                         .fallbackToDestructiveMigration(true) // FIX: no boolean parameter
-                        .addCallback(object : RoomDatabase.Callback() {
+                        .addCallback(object : Callback() {
                             override fun onCreate(db: SupportSQLiteDatabase) {
                                 super.onCreate(db)
                                 // Fresh install -> create triggers now

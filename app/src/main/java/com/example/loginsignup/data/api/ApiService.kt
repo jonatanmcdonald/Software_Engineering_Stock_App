@@ -1,7 +1,9 @@
 package com.example.loginsignup.data.api
 
 import com.example.loginsignup.data.models.LastQuote
+import com.example.loginsignup.data.models.NewsItem
 import com.example.loginsignup.data.models.Profile
+import com.example.loginsignup.data.models.newsResp
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -31,6 +33,13 @@ interface ApiService {
         @Query("symbol") symbol: String,
         @Query("token") token: String
     ): LastQuote
+
+    @GET("news")
+    suspend fun getNews(
+        @Query("category") category: String = "general",
+        @Query("token") token: String
+    ): List<NewsItem>
+
 
     @GET("stock/profile2")
     suspend fun getProfile(

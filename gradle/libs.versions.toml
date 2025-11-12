@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.0"
+agp = "8.13.1"
 androidxRoomRuntime = "2.2.5"
 converterGson = "3.0.0"
 kotlin = "2.0.21"
@@ -29,6 +29,7 @@ roomTesting = "2.8.1"
 
 room = "2.8.1"
 runtimeLivedata = "1.9.3"
+browser = "1.9.0"
 
 [libraries]
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
@@ -63,6 +64,7 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 #room-runtime-v225 = { module = "androidx.room:room-runtime", version.ref = "androidxRoomRuntime" }
 
 [plugins]

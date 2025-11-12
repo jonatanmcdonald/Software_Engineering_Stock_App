@@ -2,6 +2,7 @@ package com.example.loginsignup.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,8 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,28 +44,54 @@ fun TransactionScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Scrollable list container (empty for now)
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Placeholder: empty items to show the layout
-            items(transactions) { tx ->
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(vertical = 4.dp),
-                    color = if (tx.side == "SELL") Color(0xFFFFCDD2) else Color(0xFFC8E6C9),
-                    shadowElevation = 2.dp,
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "Date: ${
-                            java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
-                                .format(tx.timestamp)
-                        }", fontSize = 12.sp)
-                        Text("Symbol: ${tx.symbol} | Side : ${tx.side}", fontSize = 16.sp)
-                        Text("Qty: ${tx.qty} | Price: $${"%.2f".format(tx.price)}", fontSize = 14.sp)
+        if (transactions.isEmpty())
+        {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "No transactions yet.\n BUY or SELL stocks to see them here",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFFE5E7EB),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        else {
+            // Scrollable list container (empty for now)
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Placeholder: empty items to show the layout
+                items(transactions) { tx ->
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 4.dp),
+                        color = if (tx.side == "SELL") Color(0xFFFFCDD2) else Color(0xFFC8E6C9),
+                        shadowElevation = 2.dp,
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Date: ${
+                                    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
+                                        .format(tx.timestamp)
+                                }", fontSize = 12.sp, color = Color.Black
+                            )
+                            Text(
+                                "Symbol: ${tx.symbol} | Side : ${tx.side}",
+                                fontSize = 16.sp,
+                                color = Color.Black
+                            )
+                            Text(
+                                "Qty: ${tx.qty} | Price: $${"%.2f".format(tx.price)}",
+                                fontSize = 14.sp,
+                                color = Color.Black
+                            )
+                        }
                     }
                 }
             }

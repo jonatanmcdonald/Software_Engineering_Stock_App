@@ -19,6 +19,7 @@ import com.example.loginsignup.data.session.SessionManager
 import com.example.loginsignup.navigation.MainDest.details
 import com.example.loginsignup.screens.DetailsScreen
 import com.example.loginsignup.screens.LogInScreen
+import com.example.loginsignup.screens.NewsScreen
 import com.example.loginsignup.screens.PortfolioScreen
 import com.example.loginsignup.screens.SearchScreen
 import com.example.loginsignup.screens.SignUpScreen
@@ -27,7 +28,7 @@ import com.example.loginsignup.screens.TransactionScreen
 import com.example.loginsignup.screens.WatchListScreen
 
 @Composable
-fun AppNavHost(isSignedIn: Boolean) {
+fun AppNavHost() {
     val navController = rememberNavController()
 
     val isSignedIn = SessionManager.isUserSignedIn()
@@ -35,7 +36,7 @@ fun AppNavHost(isSignedIn: Boolean) {
     // observe current route for showing the bottom bar
     val backEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backEntry?.destination?.route
-    val tabRoutes = listOf(MainDest.HOME, MainDest.WATCHLIST, MainDest.TRANSACTION)
+    val tabRoutes = listOf(MainDest.HOME, MainDest.WATCHLIST, MainDest.TRANSACTION, MainDest.NEWS)
     val showBottomBar = currentRoute in tabRoutes
 
     Scaffold(
@@ -124,11 +125,12 @@ fun AppNavHost(isSignedIn: Boolean) {
             composable(MainDest.TRANSACTION) {
                 val userId = SessionManager.getUserId() ?: return@composable
                 TransactionScreen(userId = userId) }
+
+            composable(MainDest.NEWS)
+            {
+                NewsScreen()
+            }
         }
     }
 }
 
-@Composable
-fun ProfileScreen() {
-    TODO("Not yet implemented")
-}

@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.browser)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -103,4 +104,8 @@ dependencies {
     implementation(libs.kotlin.stdlib.jdk7)
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.android)
+
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.browser:browser:1.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
 }

@@ -9,13 +9,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Preview
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Preview
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -321,10 +323,16 @@ fun AppBottomBar(
                                     contentDescription = "Watchlist"
                                 )
                             }
+                            MainDest.TRANSACTION -> {
+                                Icon(
+                                    imageVector = if (selected) Icons.Filled.CurrencyExchange else Icons.Outlined.CurrencyExchange,
+                                    contentDescription = "Transaction History"
+                                )
+                            }
                             else -> {
                                 Icon(
-                                    imageVector = if (selected) Icons.Filled.Person else Icons.Outlined.Person,
-                                    contentDescription = "Profile"
+                                    imageVector = if (selected) Icons.Filled.Campaign else Icons.Outlined.Campaign,
+                                    contentDescription = "News"
                                 )
                             }
                         }
@@ -335,7 +343,8 @@ fun AppBottomBar(
                         when (route) {
                             MainDest.HOME -> "Home"
                             MainDest.WATCHLIST -> "Watchlist"
-                            else -> "Profile"
+                            MainDest.TRANSACTION -> "Transaction History"
+                            else -> "News"
                         },
                         style = MaterialTheme.typography.labelLarge
                     )
