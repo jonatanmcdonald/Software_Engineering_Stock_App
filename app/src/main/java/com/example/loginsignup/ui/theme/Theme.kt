@@ -32,7 +32,6 @@ private val DarkModernColorScheme = darkColorScheme(
     onError = Color.White
 )
 
-// 🎨 --- Theme Wrapper ---
 @Composable
 fun MyAppTheme(content: @Composable () -> Unit) {
     MaterialTheme(

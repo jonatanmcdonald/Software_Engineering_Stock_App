@@ -121,7 +121,9 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                             firstName = firstName,
                             lastName = lastName,
                             email = email,
-                            password = password
+                            password = password,
+
+
                         )
 
                         userViewModel.signUpUser(newUser) { success ->
