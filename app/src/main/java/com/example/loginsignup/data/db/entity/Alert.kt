@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 data class Alert(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-
     val symbol: String,
     val userId: Int,
     val minPrice: Double,
@@ -15,7 +14,7 @@ data class Alert(
     val currentPrice: Double,
     val createdAt: Long = System.currentTimeMillis(),
     val isTriggered: Boolean = false,
-    val location: String,
+    val triggerParentID: Long,
     val runCondition: String
 )
 

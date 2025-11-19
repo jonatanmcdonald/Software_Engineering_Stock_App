@@ -67,8 +67,12 @@ class SearchViewModel(application: Application): AndroidViewModel(application) {
             val stockDao = db.stockDao()
             val transactionDao = db.transactionDao()
             val portfolioDao = db.portfolioDao()
+            val alertDao = db.alertDao()
+            val noteDao = db.noteDao()
 
-            repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao)
+
+
+            repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao)
 
             // Search pipeline (single source of truth = `searchQuery`)
             viewModelScope.launch {
@@ -109,7 +113,6 @@ class SearchViewModel(application: Application): AndroidViewModel(application) {
                         _price.value =
                             WatchUi(
                                 ticker = _ticker.value,
-                                note = "",
                                 price = resp.price,
                                 change = resp.change,
                                 changePercent = resp.percentChange,

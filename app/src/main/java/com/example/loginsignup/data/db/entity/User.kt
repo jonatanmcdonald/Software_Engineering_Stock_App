@@ -10,6 +10,7 @@ data class User(
     val firstName: String,
     val lastName: String,
     val email: String,
-    val password: String
-
+    val password: String,
+    val securityQuestion: String = "What is the name of your home town?",
+    val securityAnswer: String
 )

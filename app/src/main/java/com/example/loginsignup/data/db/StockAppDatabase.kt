@@ -8,11 +8,15 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.loginsignup.R
+import com.example.loginsignup.data.db.dao.AlertDao
+import com.example.loginsignup.data.db.dao.NoteDao
 import com.example.loginsignup.data.db.dao.PortfolioDao
 import com.example.loginsignup.data.db.dao.StockDao
 import com.example.loginsignup.data.db.dao.TransactionDao
 import com.example.loginsignup.data.db.dao.UserDao
 import com.example.loginsignup.data.db.dao.WatchListDao
+import com.example.loginsignup.data.db.entity.Alert
+import com.example.loginsignup.data.db.entity.Note
 import com.example.loginsignup.data.db.entity.Portfolio
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.Transaction
@@ -145,7 +149,7 @@ private fun installTriggers(db: SupportSQLiteDatabase) {
 
     Log.d("StockAppDatabase", "Triggers installed")
 }
-val MIGRATION_X_Y = object : Migration(1, 17) {
+val MIGRATION_X_Y = object : Migration(1, 22) {
     override fun migrate(db: SupportSQLiteDatabase) {
 
         // Drop any old unique-on-symbol index (name may vary by Room version)
@@ -167,16 +171,21 @@ val MIGRATION_X_Y = object : Migration(1, 17) {
 // ---------- Room DB ----------
 
 @Database(
-    entities = [User::class, WatchList::class, Stock::class, Portfolio::class, Transaction::class],
+    entities = [User::class, WatchList::class, Stock::class, Portfolio::class, Transaction::class, Alert::class, Note::class],
     views = [WatchListWithSymbol::class],
-    version = 17,
+    version = 22,
     exportSchema = false
 )
 abstract class StockAppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
+
+    abstract fun alertDao(): AlertDao
+
+    abstract fun noteDao(): NoteDao
     abstract fun watchListDao(): WatchListDao
     abstract fun stockDao(): StockDao
+
     abstract fun portfolioDao(): PortfolioDao
     abstract fun transactionDao(): TransactionDao
 

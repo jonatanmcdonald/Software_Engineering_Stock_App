@@ -35,8 +35,11 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
         val stockDao = StockAppDatabase.getDatabase(application).stockDao()
         val transactionDao = StockAppDatabase.getDatabase(application).transactionDao()
         val portfolioDao = StockAppDatabase.getDatabase(application).portfolioDao()
+        val alertDao = StockAppDatabase.getDatabase(application).alertDao()
+        val noteDao = StockAppDatabase.getDatabase(application).noteDao()
 
-        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao)
+
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao)
         readAllData = repository.readAllData
     }
 

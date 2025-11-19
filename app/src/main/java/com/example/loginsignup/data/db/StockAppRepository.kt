@@ -1,11 +1,15 @@
 package com.example.loginsignup.data.db
 
 import androidx.lifecycle.LiveData
+import com.example.loginsignup.data.db.dao.AlertDao
+import com.example.loginsignup.data.db.dao.NoteDao
 import com.example.loginsignup.data.db.dao.PortfolioDao
 import com.example.loginsignup.data.db.dao.StockDao
 import com.example.loginsignup.data.db.dao.TransactionDao
 import com.example.loginsignup.data.db.dao.UserDao
 import com.example.loginsignup.data.db.dao.WatchListDao
+import com.example.loginsignup.data.db.entity.Alert
+import com.example.loginsignup.data.db.entity.Note
 import com.example.loginsignup.data.db.entity.Portfolio
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.Transaction
@@ -24,7 +28,11 @@ class StockAppRepository(private val userDao: UserDao,
                          private val watchListDao: WatchListDao,
                          private val stockDao: StockDao,
                          private val transactionDao: TransactionDao,
-                         private val portfolioDao: PortfolioDao) {
+                         private val portfolioDao: PortfolioDao,
+                         private val alertDao: AlertDao,
+                         private val noteDao: NoteDao,
+
+                         ) {
 
     val readAllData: LiveData<List<User>> = userDao.readAllData()
 
@@ -49,7 +57,6 @@ class StockAppRepository(private val userDao: UserDao,
             item.userId,
             item.id,
             item.name,
-            item.note,
             item.stockId,
             updatedAt = System.currentTimeMillis()
         )
@@ -80,7 +87,6 @@ class StockAppRepository(private val userDao: UserDao,
         return news
     }
 
-
      suspend fun fetchPrice(symbol: String): LastQuote =
          api.getLastQuote(symbol = symbol, token = getApiKey())
 
@@ -94,14 +100,6 @@ class StockAppRepository(private val userDao: UserDao,
 
     suspend fun addTransaction(transaction: Transaction) {
         return transactionDao.addTransaction(transaction)
-    }
-
-    suspend fun deleteTransaction(transaction: Transaction) {
-        transactionDao.deleteTransaction(transaction)
-    }
-
-    suspend fun deleteAllTransForUser(userId: Int) {
-        transactionDao.deleteAllTransForUser(userId)
     }
 
     fun observeUserPortfolio(userId: Int): Flow<List<Portfolio>> {
@@ -134,5 +132,38 @@ class StockAppRepository(private val userDao: UserDao,
             throw IllegalArgumentException("Not enough shares to sell")
         }
     }
+
+
+    suspend fun insertNote(note: Note): Long {
+         return noteDao.insert(note)
+    }
+
+    suspend fun updateNote(note: Note): Int {
+        return noteDao.update(note.watchlistId, note.content)
+    }
+
+    suspend fun deleteNote(note: Note) {
+        noteDao.delete(note)
+    }
+
+    suspend fun getNotesForWatchlist(watchlistId: Long): Note {
+        return noteDao.getNotesForWatchlist(watchlistId)
+    }
+    suspend fun insertAlert(alert: Alert) {
+        alertDao.insertAlert(alert)
+    }
+
+    suspend fun updateAlert(alert: Alert) {
+        alertDao.updateAlert(alert)
+    }
+
+    suspend fun deleteAlert(alert: Alert) {
+        alertDao.deleteAlert(alert)
+    }
+
+    suspend fun getTriggeredAlerts(userId: Int, symbol: String, triggerParentId: Long): Alert {
+        return alertDao.getTriggeredAlerts(userId, symbol, triggerParentId)
+    }
+
 }
 

@@ -53,6 +53,7 @@ fun SignUpScreen(onViewTerms: () -> Unit,
     var lastName by remember {mutableStateOf("")}
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var securityAnswer by remember {mutableStateOf("")}
 
     val context = LocalContext.current
 
@@ -101,6 +102,13 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                 onPasswordChange = {password = it}
             )
 
+            MyTextField(
+                labelValue = stringResource(id = R.string.security_question),
+                painterResource(id = R.drawable.security_symbol),
+                textValue = securityAnswer,
+                onValueChange = {securityAnswer = it}
+            )
+
             Button(
                 onClick = {
                 when {
@@ -109,6 +117,9 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                     }
                     password.isBlank() -> {
                         Toast.makeText(context, "Password cannot be empty", Toast.LENGTH_SHORT).show()
+                    }
+                    securityAnswer.isBlank() -> {
+                        Toast.makeText(context, "Security Question response cannot be empty", Toast.LENGTH_SHORT).show()
                     }
                     else -> {
                         Log.d(
@@ -122,8 +133,7 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                             lastName = lastName,
                             email = email,
                             password = password,
-
-
+                            securityAnswer = securityAnswer
                         )
 
                         userViewModel.signUpUser(newUser) { success ->

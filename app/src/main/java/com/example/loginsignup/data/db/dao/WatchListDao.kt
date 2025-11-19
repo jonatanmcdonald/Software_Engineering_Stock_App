@@ -19,7 +19,6 @@ interface WatchListDao {
     @Query("""
         UPDATE watchlist
         SET name = :name,
-            note = :note,
             stockId = :stockId,
             updatedAt = :updatedAt
         WHERE id = :itemId AND userId = :userId
@@ -28,7 +27,6 @@ interface WatchListDao {
         userId: Int,
         itemId: Long,
         name: String,
-        note: String?,
         stockId: Long,
         updatedAt: Long
     ): Int
@@ -71,19 +69,24 @@ interface WatchListDao {
         """)*/
     @Query("""
     SELECT 
-        w.id AS id,
-        w.userId AS userId,
-        w.stockId AS stockId,
-        COALESCE(w.name, '') AS name,
-        w.note AS note,
+        w.id        AS id,
+        w.userId    AS userId,
+        w.stockId   AS stockId,
+        w.name      AS name,
+        n.id        AS noteId,
+        n.imageUrl  AS imageUrl,
+        n.content   AS content,
+        n.timestamp AS timestamp,
+        s.ticker    AS ticker,
         w.createdAt AS createdAt,
-        w.updatedAt AS updatedAt,
-        COALESCE(s.ticker, '') AS ticker
+        w.updatedAt AS updatedAt
     FROM watchlist w 
     JOIN stocks s ON s.id = w.stockId
+    LEFT JOIN notes n ON n.watchlistId = w.id
     WHERE w.userId = :userId
     ORDER BY w.updatedAt DESC, w.createdAt DESC
 """)
     fun observeAllForUser(userId: Int): Flow<List<WatchListWithSymbol>>
+
 
 }

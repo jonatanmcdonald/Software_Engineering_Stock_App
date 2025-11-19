@@ -95,14 +95,14 @@ fun LogInScreen(onSignedIn: () -> Unit,
                 onValueChange = { email = it }
             )
 
-
-
             PasswordTextFieldComponent(
                 labelValue = stringResource(id = R.string.password),
                 painterResource(id = R.drawable.lock_icon),
                 password = password,
                 onPasswordChange = { password = it }
             )
+
+
 
             Button(
                 onClick = {

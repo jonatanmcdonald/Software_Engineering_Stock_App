@@ -41,8 +41,11 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         val stockDao = db.stockDao()
         val transactionDao = db.transactionDao()
         val portfolioDao = db.portfolioDao()
+        val alertDao = db.alertDao()
+        val noteDao = db.noteDao()
 
-        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao)
+
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao)
 
     }
 
@@ -54,17 +57,15 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             // Build list exactly from DB rows; anything missing is dropped (handles deletions)
             portfolio.map { p ->
                 val prev = prevById[p.id]
-                if (prev != null) {
-                    // Keep live fields; refresh the static labels/quantities from DB
-                    prev.copy(
-                        ticker      = p.symbol,          // Portfolio.symbol is non-null
-                        qty         = p.qty,
-                        avgCost     = p.avg_cost,
-                        costBasis   = p.cost_basis,
-                        realizedPnl = p.realized_pnl
-                    )
-                } else {
-                    // New row: seed placeholders; live fields will be filled by the price loop
+                prev?.// Keep live fields; refresh the static labels/quantities from DB
+                copy(
+                    ticker      = p.symbol,          // Portfolio.symbol is non-null
+                    qty         = p.qty,
+                    avgCost     = p.avg_cost,
+                    costBasis   = p.cost_basis,
+                    realizedPnl = p.realized_pnl
+                )
+                    ?: // New row: seed placeholders; live fields will be filled by the price loop
                     LivePortfolio(
                         id          = p.id,
                         ticker      = p.symbol,
@@ -73,7 +74,6 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                         costBasis   = p.cost_basis,
                         realizedPnl = p.realized_pnl
                     )
-                }
             }
         }
     }
@@ -141,15 +141,15 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             val pct: Double? = resp.percentChange?.let { if (kotlin.math.abs(it) <= 1.0) it * 100.0 else it }
 
             val prevClose: Double? = when {
-                changePerShare != null -> last?.minus(changePerShare)
+                changePerShare != null -> last.minus(changePerShare)
                 else -> existing?.prevClose ?: existing?.last
             }
 
-            val marketValue: Double? = last?.let { it * p.qty }
-            val unrealized: Double?  = marketValue?.let { (it - p.avg_cost) * p.qty }
+            val marketValue: Double = last * p.qty
+            val unrealized: Double = marketValue.let { (it - p.avg_cost) * p.qty }
 
             val dayChange: Double?   = changePerShare?.let { it * p.qty }
-            val totalPnl: Double?    = unrealized?.let { it + p.realized_pnl }
+            val totalPnl: Double = unrealized + p.realized_pnl
 
             // If we already had a live row, keep stable fields from DB + update live numbers
             (existing ?: LivePortfolio(
@@ -194,15 +194,6 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
     {
         viewModelScope.launch {
             repository.addTransaction(transaction)
-        }
-    }
-
-    fun sellStock(stockId: Long, qty: Double) = viewModelScope.launch {
-        try {
-            repository.sellStock(stockId, qty)
-
-        } catch (e: Throwable) {
-            Log.e("PortfolioViewModel", "Failed to sell stock: ${e.message}")
         }
     }
 

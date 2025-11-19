@@ -62,7 +62,6 @@ import androidx.compose.ui.zIndex
 import com.example.loginsignup.R
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.navigation.MainDest
-import com.example.loginsignup.screens.WatchRow
 
 //welcome message
 @Composable
@@ -373,15 +372,13 @@ fun AddWatchlistItemDialog(
     onQueryChange: (String) -> Unit,
     onStockSelected: (Stock) -> Unit,
     initialName: String? = null,
-    initialNote: String? = null,
     initialStock: String? = null,
     confirmLabel: String,
     isLoading: Boolean,
-    onSave: (WatchRow) -> Unit,
+    onSave: (String) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     var name by rememberSaveable { mutableStateOf(initialName.orEmpty()) }
-    var note by rememberSaveable { mutableStateOf(initialNote.orEmpty()) }
 
     val scroll = rememberScrollState()
 
@@ -405,20 +402,13 @@ fun AddWatchlistItemDialog(
         }
     }
 
-    val canConfirm = searchQuery.isNotBlank() && name.isNotBlank()
+    val canConfirm = searchQuery.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text(if (initialName == null) "Add to Watchlist" else "Edit Watchlist Item") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Display Name (optional)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
 
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -469,25 +459,13 @@ fun AddWatchlistItemDialog(
                     }
                 }
 
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Note (optional)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         },
         confirmButton = {
             TextButton(
                 enabled = canConfirm && !isLoading,
                 onClick = {
-                    onSave(
-                        WatchRow(
-                            name = name,
-                            note = note,
-                            ticker = searchQuery.trim()
-                        )
-                    )
+                    onSave(searchQuery.trim())
                 }
             ) { Text(confirmLabel) }
         },

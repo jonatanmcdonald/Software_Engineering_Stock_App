@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -24,22 +23,28 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.onFocusChanged
+import com.example.loginsignup.data.db.entity.Note
 import java.util.Locale
 
 data class WatchRow(
-    val name: String,
-    val note: String?,
     val ticker: String
 )
 
 data class WatchUi(
     val id: Long = 0L,
     val name: String = "",
-    val note: String? = null,
+    val noteId: Long? = null,
+    val imageUrl: String? = null,
+    val content: String? = null,
     val ticker: String = "",
     val price: Double = 0.0,        // latest close (or open if close missing)
     val change: Double? = null,       // price - previous price
     val changePercent: Double? = null,
+    val hasAlert: Boolean = false,
+    val alertParameter: String = "",
+    val alertPrice: Double = 0.0,
     val isUp: Boolean? = false         // null if change unknown
 )
 
@@ -130,9 +135,28 @@ fun WatchListScreen(
                             price = item.price,
                             change = item.change,
                             changePercent = item.changePercent,
+                            noteContent = item.content,
+                            noteImageUrl = item.imageUrl,
+                            onDelete = { wvm.delete(item.id) },
+                            hasAlert = item.hasAlert,
+                            alertParameter = item.alertParameter,
+                            alertPrice = item.alertPrice,
+                            onUpsertNote ={ content ->
+                                scope.launch {
+                                    wvm.upsertNoteContent(
+                                        Note(
+                                            content = content,
+                                            watchlistId = item.id,
+                                            imageUrl = item.imageUrl,
+                                            timestamp = System.currentTimeMillis()
+                                        )
+                                    )
+                                }
+                            },
+                            onUpsertAlert = {string, double ->},
 
-                            onDelete = { wvm.delete(item.id) }
                         )
+
                     }
                 }
             }
@@ -144,8 +168,6 @@ fun WatchListScreen(
                 onDismissRequest = { showDialog = false },
 
                 // Prefill when editing
-                initialName = initial?.name,
-                initialNote = initial?.note,
                 initialStock = initial?.ticker,
                 confirmLabel = if (initial == null) "Add" else "Update",
 
@@ -160,9 +182,7 @@ fun WatchListScreen(
                         wvm.upsertByUserAndStock(
                             WatchList(
                                 userId = userId,
-                                name = ui.name,
-                                note = ui.note?.ifBlank { null },
-                                stockId = wvm.getStockId(ui.ticker)// save stock
+                                stockId = wvm.getStockId(ui)// save stock
                             )
                         )
                     }
@@ -173,6 +193,7 @@ fun WatchListScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WatchCard(
     symbol: String,
@@ -180,14 +201,48 @@ private fun WatchCard(
     change: Double?,
     changePercent: Double?,
     isUp: Boolean?,
-    onDelete: () -> Unit
+    noteID: Long? = null,
+    noteContent: String? = null,
+    noteImageUrl: String? = null,
+    onDelete: () -> Unit,
+    hasAlert: Boolean = false,          // from DB: does this watch have an alert
+    alertParameter: String = "",        // e.g. "Less Than"
+    alertPrice: Double = 0.0,           // alert threshold
+    alertActive: Boolean = true,       // alert is active
+    onUpsertNote: (String) -> Unit,
+    onUpsertAlert: (String, Double) -> Unit,   // persist alert
+    onToggleAlertActive: (Boolean) -> Unit = {} //  toggle alert active
 ) {
+    val alertOptions = listOf("Less Than", "Greater Than", "Equal To")
+
+    // ===== NOTE STATE =====
+    var showNoteEditor by remember { mutableStateOf(false) }
+    var editableNoteText by remember(noteContent) {
+        mutableStateOf(noteContent.orEmpty())
+    }
+
+    // ===== ALERT STATE =====
+    var showAlertEditor by remember { mutableStateOf(false) }
+    var alertMenuExpanded by remember { mutableStateOf(false) }
+
+    var editableAlertParameter by remember(alertParameter) {
+        mutableStateOf(alertParameter.ifBlank { alertOptions.first() })
+    }
+
+    // keep price as text while editing to avoid crashes on invalid input
+    var editableAlertValueText by remember(alertPrice) {
+        mutableStateOf(
+            if (alertPrice == 0.0) "" else alertPrice.toString()
+        )
+    }
+    var alertValueError by remember { mutableStateOf<String?>(null) }
 
     val color = when (isUp) {
         true  -> Color(0xFF16A34A) // green
         false -> Color(0xFFDC2626) // red
         null  -> Color(0xFF9AA4B2) // neutral
     }
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF171A21)
@@ -196,17 +251,24 @@ private fun WatchCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(Modifier.padding(16.dp)) {
+
+            // ===== HEADER: SYMBOL + PRICE =====
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    //Text(name, style = MaterialTheme.typography.titleLarge, color = Color.White)
-                    Text(symbol, style = MaterialTheme.typography.titleLarge, color = Color(0xFF9AA4B2))
+                    Text(
+                        symbol,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color(0xFF9AA4B2)
+                    )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = price?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "--",
                         style = MaterialTheme.typography.titleLarge,
@@ -218,7 +280,6 @@ private fun WatchCard(
                             style = MaterialTheme.typography.bodyMedium,
                             color = color
                         )
-
                     }
                     if (changePercent != null) {
                         Text(
@@ -230,21 +291,231 @@ private fun WatchCard(
 
                     Spacer(Modifier.width(8.dp))
 
-                   // IconButton(onClick = onEdit) {
-                    //    Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = Color(0xFFB3C5FF))
-                  //  }
                     IconButton(onClick = onDelete) {
-                        Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = Color(0xFFFF8C8C))
+                        Icon(
+                            Icons.Outlined.Delete,
+                            contentDescription = "Delete",
+                            tint = Color(0xFFFF8C8C)
+                        )
                     }
                 }
             }
-           // if (note.isNotBlank()) {
-                //Spacer(Modifier.height(8.dp))
-                //Text(note, style = MaterialTheme.typography.bodyMedium, color = Color(0xFFDEE4EA))
-           // }
+
+            Spacer(Modifier.height(8.dp))
+            // ===== NOTE EDITOR (BOTTOM) =====
+            if (showNoteEditor) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = editableNoteText,
+                    onValueChange = { editableNoteText = it },
+                    label = { Text("Note") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = false,
+                    maxLines = 5
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TextButton(onClick = { showNoteEditor = false }) {
+                        Text("Cancel")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            showNoteEditor = false
+                            onUpsertNote(editableNoteText.trim())
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF171A21),
+                            contentColor = Color(0xFFB3C5FF)
+                        )
+                    ) {
+                        Text("Save")
+                    }
+                }
+            }
+            // ===== NOTE DISPLAY / ADD / EDIT =====
+            if (!noteContent.isNullOrBlank() && !showNoteEditor) {
+                Text(
+                    text = "Note",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFDEE4EA)
+                )
+                Spacer(Modifier.height(8.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1F2430), shape = MaterialTheme.shapes.medium)
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        text = noteContent,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFDEE4EA)
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = {
+                    editableNoteText = noteContent
+                    showNoteEditor = true
+                }) {
+                    Text("Edit", color = Color(0xFFB3C5FF))
+                }
+            } else if (noteContent.isNullOrBlank() && !showNoteEditor) {
+                Text(
+                    text = "No note yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFDEE4EA),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                TextButton(onClick = {
+                    editableNoteText = ""
+                    showNoteEditor = true
+                }, modifier = Modifier.align(Alignment.End)) {
+                    Text("Add Note", color = Color(0xFFB3C5FF))
+                }
+            }
+
+            // ===== ALERT DISPLAY / ADD / EDIT BUTTON =====
+            Spacer(Modifier.height(8.dp))
+            // ===== ALERT EDITOR =====
+            if (showAlertEditor) {
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    "Price Alert",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFDEE4EA)
+                )
+                Spacer(Modifier.height(4.dp))
+
+                ExposedDropdownMenuBox(
+                    expanded = alertMenuExpanded,
+                    onExpandedChange = { alertMenuExpanded = !alertMenuExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = editableAlertParameter,
+                        onValueChange = { /* read-only, controlled by dropdown */ },
+                        label = { Text("Condition") },
+                        readOnly = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = alertMenuExpanded)
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = alertMenuExpanded,
+                        onDismissRequest = { alertMenuExpanded = false },
+                        modifier = Modifier.exposedDropdownSize(matchTextFieldWidth = true)
+                    ) {
+                        alertOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    editableAlertParameter = option
+                                    alertMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = editableAlertValueText,
+                    onValueChange = { text ->
+                        editableAlertValueText = text
+                        alertValueError = null
+                    },
+                    label = { Text("Alert Price") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = alertValueError != null
+                )
+
+                if (alertValueError != null) {
+                    Text(
+                        text = alertValueError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TextButton(onClick = {
+                        showAlertEditor = false
+                        alertValueError = null
+                    }) {
+                        Text("Cancel")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            val parsed = editableAlertValueText.toDoubleOrNull()
+                            if (parsed == null) {
+                                alertValueError = "Enter a valid number"
+                            } else {
+                                showAlertEditor = false
+                                alertValueError = null
+                                onUpsertAlert(editableAlertParameter, parsed)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF171A21),
+                            contentColor = Color(0xFFB3C5FF)
+                        )
+                    ) {
+                        Text("Save")
+                    }
+                }
+            }
+
+            if (!hasAlert && !showAlertEditor) {
+                Text(
+                    text = "No alert yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFDEE4EA),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+                TextButton(onClick = { showAlertEditor = true }, modifier = Modifier.align(Alignment.End)) {
+                    Text("Add Alert", color = Color(0xFFB3C5FF))
+
+                }
+            } else if (hasAlert && !showAlertEditor) {
+                Text(
+                    text = "Alert: $alertParameter $alertPrice",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFB3C5FF)
+                )
+                Spacer(Modifier.height(4.dp))
+                TextButton(onClick = { showAlertEditor = true }) {
+                    Text("Edit Alert", color = Color(0xFFB3C5FF))
+                }
+            }
+
+
+
+
         }
     }
 }
+
 
 
 

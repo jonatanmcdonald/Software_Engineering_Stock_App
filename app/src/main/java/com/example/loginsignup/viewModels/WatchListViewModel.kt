@@ -3,12 +3,12 @@ package com.example.loginsignup.viewModels
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.asFlow
 import com.example.loginsignup.App
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
+import com.example.loginsignup.data.db.entity.Note
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.WatchList
 import com.example.loginsignup.data.db.view.WatchListWithSymbol
@@ -58,8 +58,11 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         val stockDao = db.stockDao()
         val transactionDao = db.transactionDao()
         val portfolioDao = db.portfolioDao()
+        val alertDao = db.alertDao()
+        val noteDao = db.noteDao()
 
-        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao)
+
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao)
 
         // Search pipeline (single source of truth = `searchQuery`)
         viewModelScope.launch {
@@ -102,7 +105,9 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                     // existing item → keep live fields, refresh static labels
                     name = w.name ?: "",
                     ticker = w.ticker ?: "",
-                    note = w.note
+                    noteId = w.noteId,
+                    imageUrl = w.imageUrl,
+                    content = w.content,
                     // price/change/isUp preserved
                 )
                     ?: // new item → seed placeholder (keeps UI smooth; prices come in live)
@@ -110,7 +115,9 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                         id = w.id,
                         name = w.name ?: "",
                         ticker = w.ticker ?: "",
-                        note = w.note,
+                        noteId = w.noteId,
+                        imageUrl = w.imageUrl,
+                        content = w.content,
                         change = null,
                         changePercent = null,
                         isUp = null
@@ -185,7 +192,9 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 id = w.id,
                 name = w.name ?: "",
                 ticker = w.ticker ?: "",
-                note = w.note,
+                noteId = w.noteId,
+                imageUrl = w.imageUrl,
+                content = w.content,
                 price = latestPx,
                 change = change,
                 changePercent = changePc,
@@ -197,7 +206,9 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 id = w.id,
                 name = w.name ?: "",
                 ticker = w.ticker ?: "",
-                note = w.note,
+                noteId = w.noteId,
+                imageUrl = w.imageUrl,
+                content = w.content,
                 price = 0.0,
                 change = null,
                 changePercent = null,
@@ -229,7 +240,6 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         repository.deleteWatchListItem(itemId)
     }
 
-
     fun onStockSelected(stock: Stock) {
         _selectedStock.value = stock
         ignoreNextSearch.value = true
@@ -237,4 +247,12 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         _searchQuery.value = stock.ticker
         _stockList.value = emptyList()
     }
+
+    suspend fun upsertNoteContent(note: Note): UpsertResult{
+       val updated = repository.updateNote(note)
+        if (updated > 0) return UpsertResult.Updated
+        val rowId = repository.insertNote(note)
+        return if (rowId != -1L) UpsertResult.Inserted else UpsertResult.AlreadyExists
+    }
+
 }

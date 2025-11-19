@@ -2,7 +2,6 @@ package com.example.loginsignup.viewModels
 
 import android.app.Application
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,9 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-private const val CALLS_PER_MINUTE = 60              // your real limit
-private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
 
 class NewsViewModel(application: Application): AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(false)
@@ -35,9 +31,12 @@ class NewsViewModel(application: Application): AndroidViewModel(application) {
         val stockDao = db.stockDao()
         val transactionDao = db.transactionDao()
         val portfolioDao = db.portfolioDao()
+        val alertDao = db.alertDao()
+        val noteDao = db.noteDao()
+
 
         repository =
-            StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao)
+            StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao)
         getNews()
     }
 
