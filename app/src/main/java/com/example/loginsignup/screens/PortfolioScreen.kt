@@ -1,6 +1,7 @@
 // screens/PortfolioScreen.kt
 package com.example.loginsignup.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,8 +22,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.loginsignup.data.db.entity.Alert
 import com.example.loginsignup.data.db.entity.Transaction
 import com.example.loginsignup.viewModels.PortfolioViewModel
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.absoluteValue
 
@@ -39,7 +43,11 @@ data class LivePortfolio(
     val dayChangePct: Double? = null,  // percent (e.g., 1.23 for +1.23%)
     val marketValue: Double? = null,   // qty * last
     val totalPnl: Double? = null,      // realized + unrealized
-    val dayChange: Double? = null      // change_per_share * qty
+    val dayChange: Double? = null,      // change_per_share * qty
+    val hasAlert: Boolean = false,
+    val alertParameter: String = "",
+    val alertPrice: Double = 0.0,
+    val alertActive: Boolean = true
 )
 
 // ---------- Screen ----------
@@ -65,7 +73,7 @@ fun PortfolioScreen(
     val totalRealized = remember(rows) { rows.sumOf { it.realizedPnl } }
     val totalPnl = totalRealized + totalUnreal
     val dayPnl = remember(rows) { rows.sumOf { it.dayChange ?: 0.0 } }
-
+    val scope = rememberCoroutineScope()
     var selectedStock by remember { mutableStateOf<LivePortfolio?>(null)}
 
     val gains by pvm.gainsLosses.collectAsState(emptyList())
@@ -135,8 +143,36 @@ fun PortfolioScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(rows, key = { it.id }) { item ->
-                        PortfolioCard(item) { clickedRow ->
+                        PortfolioCard(
+                            item,
+                            item.hasAlert,
+                            item.alertParameter,
+                            item.alertPrice,
+                            item.alertActive,
+                            onUpsertAlert = { parameter, price, active ->
+                               scope.launch {
+                                   pvm.upsertAlert(
+                                       Alert(
+                                           symbol = item.ticker,
+                                           userId = userId,
+                                           triggerPrice = price,
+                                           triggerParent = "Portfolio",
+                                           runCondition = parameter,
+                                           isActive = active
+                                       )
+                                   )
+                               }
+                            },
+                            onToggleAlertActive = { isActive ->
+                                scope.launch {
+                                    pvm.toggleAlertActive("Portfolio", userId, item.ticker, isActive)
+                                }
+                            }
+
+
+                        ) { clickedRow ->
                             selectedStock = clickedRow
+
                         }
                     }
                 }
@@ -250,16 +286,55 @@ private fun Stat(label: String, value: String, color: Color) {
 
 // ---------- Row Card ----------
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun PortfolioCard(
     row: LivePortfolio,
+    hasAlert: Boolean = false,
+    alertParameter: String = "",
+    alertPrice: Double = 0.0,
+    alertActive: Boolean = true,
+    onUpsertAlert: (String, Double, Boolean) -> Unit,
+    onToggleAlertActive: (Boolean) -> Unit,
     onClick: (LivePortfolio) -> Unit
 ) {
+    val alertOptions = listOf("LESS_THAN", "GREATER_THAN", "EQUAL_TO")
     val isUp = row.unrealizedPnl?.let { it >= 0.0 }
-    val color = when (isUp) {
+    val priceColor = when (isUp) {
         true  -> Color(0xFF16A34A)
         false -> Color(0xFFDC2626)
         null  -> Color(0xFF9AA4B2)
     }
+
+    val pnl = row.unrealizedPnl
+
+    Log.d("PortfolioCard", "PortfolioCard: $pnl")
+
+    val color = when {
+        pnl == null -> Color(0xFF9AA4B2)         // no data / neutral
+        pnl > 0.0   -> Color(0xFF16A34A)         // green for gain
+        pnl < 0.0   -> Color(0xFFDC2626)         // red for loss
+        else        -> Color.White               // exactly 0.0 → neutral/white
+    }
+
+
+    // ===== ALERT STATE =====
+    var showAlertEditor by remember { mutableStateOf(false) }
+    var alertMenuExpanded by remember { mutableStateOf(false) }
+
+    var editableAlertParameter by remember(alertParameter) {
+        mutableStateOf(alertParameter.ifBlank { alertOptions.first() })
+    }
+    var alertActiveParameter by remember(alertActive) {
+        mutableStateOf(alertActive)
+    }
+
+    // keep price as text while editing to avoid crashes on invalid input
+    var editableAlertValueText by remember(alertPrice) {
+        mutableStateOf(
+            if (alertPrice == 0.0) "" else alertPrice.toString()
+        )
+    }
+    var alertValueError by remember { mutableStateOf<String?>(null) }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF171A21)),
@@ -288,12 +363,12 @@ private fun PortfolioCard(
                     Text(
                         text = row.last?.let { money(it) } ?: "--",
                         style = MaterialTheme.typography.titleLarge,
-                        color = color
+                        color = priceColor
                     )
                     Text(
                         text = row.dayChangePct?.let { pct(it) } ?: "—",
                         style = MaterialTheme.typography.bodySmall,
-                        color = color
+                        color = priceColor
                     )
                 }
             }
@@ -309,13 +384,176 @@ private fun PortfolioCard(
                 LabeledValue(
                     "Unrealized",
                     row.unrealizedPnl?.let { money(it) } ?: "--",
-                    if ((row.unrealizedPnl ?: 0.0) >= 0) Color(0xFF16A34A) else Color(0xFFDC2626)
+                    color
                 )
                 LabeledValue(
                     "Total P&L",
                     row.totalPnl?.let { money(it) } ?: "--",
-                    if ((row.totalPnl ?: 0.0) >= 0) Color(0xFF16A34A) else Color(0xFFDC2626)
+                    color
                 )
+            }
+
+            // ===== ALERT DISPLAY / ADD / EDIT BUTTON =====
+            Spacer(Modifier.height(8.dp))
+            // ===== ALERT EDITOR =====
+            if (showAlertEditor) {
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    "Percent Change Alert",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFDEE4EA)
+                )
+                Spacer(Modifier.height(4.dp))
+
+                ExposedDropdownMenuBox(
+                    expanded = alertMenuExpanded,
+                    onExpandedChange = { alertMenuExpanded = !alertMenuExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = editableAlertParameter,
+                        onValueChange = { /* read-only, controlled by dropdown */ },
+                        label = { Text("Condition") },
+                        readOnly = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = alertMenuExpanded)
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = alertMenuExpanded,
+                        onDismissRequest = { alertMenuExpanded = false },
+                        modifier = Modifier.exposedDropdownSize(matchTextFieldWidth = true)
+                    ) {
+                        alertOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    editableAlertParameter = option
+                                    alertMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = editableAlertValueText,
+                    onValueChange = { text ->
+                        editableAlertValueText = text
+                        alertValueError = null
+                    },
+                    label = { Text("Alert Percentage") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = alertValueError != null
+                )
+
+                if (alertValueError != null) {
+                    Text(
+                        text = alertValueError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TextButton(onClick = {
+                        showAlertEditor = false
+                        alertValueError = null
+                    }) {
+                        Text("Cancel")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            val parsed = editableAlertValueText.toDoubleOrNull()
+                            if (parsed == null || parsed > 100.00) {
+                                alertValueError = "Enter a valid percentage"
+                            }else {
+                                showAlertEditor = false
+                                alertValueError = null
+                                onUpsertAlert(editableAlertParameter, parsed, alertActiveParameter)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF171A21),
+                            contentColor = Color(0xFFB3C5FF)
+                        )
+                    ) {
+                        Text("Save")
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            if (!hasAlert && !showAlertEditor) {
+                Text(
+                    text = "No alert yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFDEE4EA),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+                TextButton(onClick = { showAlertEditor = true }, modifier = Modifier.align(Alignment.End)) {
+                    Text("Add Alert", color = Color(0xFFB3C5FF))
+
+                }
+            } else if (hasAlert && !showAlertEditor) {
+                Text(
+                    text = "Alert",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFFDEE4EA)
+                )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1F2430), shape = MaterialTheme.shapes.medium)
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        text = "$alertParameter $alertPrice% of average cost value",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFB3C5FF)
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (alertActiveParameter) "Alert is ACTIVE" else "Alert is PAUSED",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (alertActiveParameter) Color(0xFF4ADE80) else Color(0xFF9AA4B2)
+                    )
+
+                    Switch(
+                        checked = alertActiveParameter,
+                        onCheckedChange = { newValue ->
+                            alertActiveParameter = newValue
+                            onToggleAlertActive(newValue)
+                        }
+                    )
+                }
+
+                TextButton(onClick = { showAlertEditor = true }) {
+                    Text("Edit Alert", color = Color(0xFFB3C5FF))
+                }
             }
         }
     }

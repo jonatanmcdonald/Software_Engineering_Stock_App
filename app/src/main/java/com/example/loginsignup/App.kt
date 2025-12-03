@@ -1,11 +1,13 @@
 package com.example.loginsignup
 
 
+
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
+
 import android.os.Build
+
 import com.example.loginsignup.utils.GlobalRateLimiter
 
 class App : Application() {
@@ -17,6 +19,7 @@ class App : Application() {
         createNotificationChannel()
         rateLimiter = GlobalRateLimiter(maxPerMinute = 60) // your real API cap
     }
+
 
     private fun createNotificationChannel() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){

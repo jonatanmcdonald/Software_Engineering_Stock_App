@@ -13,13 +13,21 @@ import androidx.room.PrimaryKey
             parentColumns = ["id"],
             childColumns = ["watchlistId"],
             onDelete = ForeignKey.CASCADE
+        ),
+
+        ForeignKey(
+            entity = User::class,
+            parentColumns = ["id"],
+            childColumns = ["userId"],
+            onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["watchlistId"])]
+    indices = [Index(value = ["watchlistId", "userId"])]
 )
 class Note(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
+    val userId: Int,
     val watchlistId: Long,
     val imageUrl: String? = null,
     val title: String? = null,

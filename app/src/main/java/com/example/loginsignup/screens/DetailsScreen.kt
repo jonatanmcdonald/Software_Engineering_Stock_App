@@ -179,7 +179,7 @@ fun DetailsScreen(
                         onClick = {
                                     val transaction = Transaction(
                                         qty = qty.toInt(),
-                                        price = total.toDouble(),
+                                        price = latestPrice.toDouble(),
                                         timestamp = System.currentTimeMillis(),
                                         side = "BUY",
                                         symbol = ticker,

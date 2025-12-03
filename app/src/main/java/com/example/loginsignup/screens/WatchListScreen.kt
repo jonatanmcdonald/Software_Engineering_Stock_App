@@ -24,7 +24,7 @@ import androidx.compose.runtime.getValue
 
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.focus.onFocusChanged
+import com.example.loginsignup.data.db.entity.Alert
 import com.example.loginsignup.data.db.entity.Note
 import java.util.Locale
 
@@ -45,7 +45,8 @@ data class WatchUi(
     val hasAlert: Boolean = false,
     val alertParameter: String = "",
     val alertPrice: Double = 0.0,
-    val isUp: Boolean? = false         // null if change unknown
+    val isUp: Boolean? = false,         // null if change unknown
+    val alertActive: Boolean = true
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -141,6 +142,7 @@ fun WatchListScreen(
                             hasAlert = item.hasAlert,
                             alertParameter = item.alertParameter,
                             alertPrice = item.alertPrice,
+                            alertActive = item.alertActive,
                             onUpsertNote ={ content ->
                                 scope.launch {
                                     wvm.upsertNoteContent(
@@ -148,12 +150,28 @@ fun WatchListScreen(
                                             content = content,
                                             watchlistId = item.id,
                                             imageUrl = item.imageUrl,
-                                            timestamp = System.currentTimeMillis()
+                                            timestamp = System.currentTimeMillis(),
+                                            userId = userId
                                         )
                                     )
                                 }
                             },
-                            onUpsertAlert = {string, double ->},
+                            onUpsertAlert = { parameter, price, alertActive -> scope.launch {  wvm.upsertAlert(
+                                Alert(
+                                    symbol = item.ticker,
+                                    userId = userId,
+                                    triggerPrice = price,
+                                    triggerParent = "Watchlist",
+                                    runCondition = parameter,
+                                    isActive= alertActive
+                                )
+                            )}},
+
+                            onToggleAlertActive = { isActive ->
+                                scope.launch {
+                                    wvm.toggleAlertActive("Watchlist", userId, item.ticker, isActive)
+                                }
+                            }
 
                         )
 
@@ -201,7 +219,6 @@ private fun WatchCard(
     change: Double?,
     changePercent: Double?,
     isUp: Boolean?,
-    noteID: Long? = null,
     noteContent: String? = null,
     noteImageUrl: String? = null,
     onDelete: () -> Unit,
@@ -210,10 +227,10 @@ private fun WatchCard(
     alertPrice: Double = 0.0,           // alert threshold
     alertActive: Boolean = true,       // alert is active
     onUpsertNote: (String) -> Unit,
-    onUpsertAlert: (String, Double) -> Unit,   // persist alert
+    onUpsertAlert: (String, Double, Boolean) -> Unit,   // persist alert
     onToggleAlertActive: (Boolean) -> Unit = {} //  toggle alert active
 ) {
-    val alertOptions = listOf("Less Than", "Greater Than", "Equal To")
+    val alertOptions = listOf("LESS_THAN", "GREATER_THAN", "EQUAL_TO")
 
     // ===== NOTE STATE =====
     var showNoteEditor by remember { mutableStateOf(false) }
@@ -227,6 +244,9 @@ private fun WatchCard(
 
     var editableAlertParameter by remember(alertParameter) {
         mutableStateOf(alertParameter.ifBlank { alertOptions.first() })
+    }
+    var alertActiveParameter by remember(alertActive) {
+        mutableStateOf(alertActive)
     }
 
     // keep price as text while editing to avoid crashes on invalid input
@@ -473,7 +493,7 @@ private fun WatchCard(
                             } else {
                                 showAlertEditor = false
                                 alertValueError = null
-                                onUpsertAlert(editableAlertParameter, parsed)
+                                onUpsertAlert(editableAlertParameter, parsed, alertActiveParameter)
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -499,11 +519,45 @@ private fun WatchCard(
                 }
             } else if (hasAlert && !showAlertEditor) {
                 Text(
-                    text = "Alert: $alertParameter $alertPrice",
+                    text = "Alert",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFB3C5FF)
+                    color = Color(0xFFDEE4EA)
                 )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1F2430), shape = MaterialTheme.shapes.medium)
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        text = "Price $alertParameter $$alertPrice",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFB3C5FF)
+                    )
+                }
                 Spacer(Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (alertActiveParameter) "Alert is ACTIVE" else "Alert is PAUSED",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (alertActiveParameter) Color(0xFF4ADE80) else Color(0xFF9AA4B2)
+                    )
+
+                    Switch(
+                        checked = alertActiveParameter,
+                        onCheckedChange = { newValue ->
+                            alertActiveParameter = newValue
+                            onToggleAlertActive(newValue)
+                        }
+                    )
+                }
+
                 TextButton(onClick = { showAlertEditor = true }) {
                     Text("Edit Alert", color = Color(0xFFB3C5FF))
                 }
