@@ -5,11 +5,14 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.loginsignup.App
+import com.example.loginsignup.PriceNotificationService
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
+import com.example.loginsignup.data.db.entity.Alert
 import com.example.loginsignup.data.db.entity.Portfolio
 import com.example.loginsignup.data.db.entity.Transaction
 import com.example.loginsignup.screens.LivePortfolio
+import com.example.loginsignup.viewModels.WatchListViewModel.UpsertResult
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -25,6 +28,9 @@ private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
 class PortfolioViewModel(application: Application) : AndroidViewModel(application) {
     private val limiter = (application as App).rateLimiter
     private var priceJob: Job? = null
+
+    private val notificationService = PriceNotificationService(application)
+
 
     private val _portfolioRows = MutableStateFlow<List<LivePortfolio>>(emptyList())
     val portfolioRows: StateFlow<List<LivePortfolio>> = _portfolioRows.asStateFlow()
@@ -72,7 +78,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                         qty         = p.qty,
                         avgCost     = p.avg_cost,
                         costBasis   = p.cost_basis,
-                        realizedPnl = p.realized_pnl
+                        realizedPnl = p.realized_pnl,
                     )
             }
         }
@@ -146,10 +152,17 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
             val marketValue: Double = last * p.qty
-            val unrealized: Double = marketValue.let { (it - p.avg_cost) * p.qty }
+            val unrealized: Double = marketValue.let { marketValue - p.cost_basis}
 
             val dayChange: Double?   = changePerShare?.let { it * p.qty }
             val totalPnl: Double = unrealized + p.realized_pnl
+
+            val alert = repository.getAlerts(p.userId, p.symbol, "Portfolio")
+
+            if(alert != null && alert.isActive){
+                checkAlertCondition(alert, last, p.avg_cost)
+            }
+
 
             // If we already had a live row, keep stable fields from DB + update live numbers
             (existing ?: LivePortfolio(
@@ -158,7 +171,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                 qty         = p.qty,
                 avgCost     = p.avg_cost,
                 costBasis   = p.cost_basis,
-                realizedPnl = p.realized_pnl
+                realizedPnl = p.realized_pnl,
             )).copy(
                 // refresh DB-backed static fields in case they changed
                 ticker      = p.symbol,
@@ -174,7 +187,11 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                 dayChangePct  = pct,
                 marketValue   = marketValue,
                 totalPnl      = totalPnl,
-                dayChange     = dayChange
+                dayChange     = dayChange,
+                hasAlert = alert != null,
+                alertParameter = alert?.runCondition ?: "",
+                alertPrice = alert?.triggerPrice ?: 0.0,
+                alertActive = alert?.isActive ?: true
             )
 
         } catch (t: Throwable) {
@@ -185,10 +202,54 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                 qty         = p.qty,
                 avgCost     = p.avg_cost,
                 costBasis   = p.cost_basis,
-                realizedPnl = p.realized_pnl
+                realizedPnl = p.realized_pnl,
             )
         }
     }
+
+    private fun checkAlertCondition(
+        alert: Alert,
+        latestPx: Double,
+        avgCost: Double
+    ): Boolean {
+        val pctChange = ((latestPx - avgCost)/ avgCost ) * 100
+        Log.d("WatchListViewModel", "checkAlertCondition: $pctChange")
+        val isTriggered = when (alert.runCondition) {
+            "GREATER_THAN" -> pctChange > alert.triggerPrice
+            "LESS_THAN" -> pctChange < alert.triggerPrice
+            "EQUAL_TO" -> kotlin.math.abs(pctChange - alert.triggerPrice) < 0.0001
+            else -> false
+        }
+
+        Log.d("WatchListViewModel", "checkAlertCondition: $isTriggered")
+        if (isTriggered) {
+            val alertText = when (alert.runCondition) {
+                "GREATER_THAN" -> "has gone above portfolio percentage"
+                "LESS_THAN" -> "has gone below portfolio percentage"
+                "EQUAL_TO" -> "has reached portfolio percentage"
+                else -> ""
+            }
+            notificationService.sendPriceNotification(latestPx, alert.triggerParent, alert.symbol, alertText)
+            viewModelScope.launch {
+                repository.toggleAlertActive(alert.triggerParent, alert.userId, alert.symbol,false)
+            }
+        }
+
+        return isTriggered
+    }
+
+    suspend fun toggleAlertActive(parent: String, userId: Int, symbol: String, isActive: Boolean)
+    {
+        repository.toggleAlertActive(parent, userId, symbol, isActive)
+    }
+
+    suspend fun upsertAlert(alert: Alert): UpsertResult{
+        val updated = repository.updateAlert(alert)
+        if (updated > 0) return UpsertResult.Updated
+        val rowId = repository.insertAlert(alert)
+        return if (rowId != -1L) UpsertResult.Inserted else UpsertResult.AlreadyExists
+    }
+
 
     fun saveSellTransaction(transaction: Transaction)
     {

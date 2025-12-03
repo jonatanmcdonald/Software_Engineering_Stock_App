@@ -116,7 +116,7 @@ class SearchViewModel(application: Application): AndroidViewModel(application) {
                                 price = resp.price,
                                 change = resp.change,
                                 changePercent = resp.percentChange,
-                                isUp = resp.change?.let { it > 0.0 }
+                                isUp = resp.change?.let { it > 0.0 },
                             )// update price flow
                     }
                     catch (t: Throwable) {

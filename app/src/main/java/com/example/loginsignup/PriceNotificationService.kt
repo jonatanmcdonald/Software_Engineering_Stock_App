@@ -5,14 +5,17 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 
 class PriceNotificationService(
     private val context: Context
 ){
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    fun sendPriceNotification(price: Double, ticker: String, alertText: String)
+    fun sendPriceNotification(price: Double, parent: String, ticker: String, alertText: String)
     {
+
+        Log.d("PriceNotificationService", "Sending notif: $ticker @ $price, text=$alertText")
         val activityIntent = Intent(context, MainActivity::class.java)
         val activityPendingIntent = PendingIntent.getActivity(
             context,
@@ -23,7 +26,7 @@ class PriceNotificationService(
         val notification = NotificationCompat.Builder(context, PRICE_CHANNEL_ID)
             .setSmallIcon(R.drawable.outline_price_change_24)
             .setContentTitle("Price Change Alert")
-            .setContentText("Price: $price, Ticker: $ticker, $alertText")
+            .setContentText("Price for $ticker in your $parent has changed to $price. $alertText")
            // .setStyle(NotificationCompat.BigTextStyle())
             .setContentIntent(activityPendingIntent)
             .build()

@@ -106,64 +106,44 @@ class StockAppRepository(private val userDao: UserDao,
         return portfolioDao.getUserPortfolio(userId)
     }
 
-    suspend fun sellStock(stockId: Long, qty: Double) {
-        val portfolioItem = portfolioDao.getPortfolioById(stockId)
-
-        if (portfolioItem != null && qty <= portfolioItem.qty) {
-            val newQty = portfolioItem.qty - qty
-
-            if (newQty > 0) {
-                portfolioDao.updateQty(stockId, newQty)
-            } else {
-                portfolioDao.delete(portfolioItem)
-            }
-
-            val transaction = Transaction(
-                userId = portfolioItem.userId,
-                symbol = portfolioItem.symbol,
-                qty = qty.toInt(),
-                price = portfolioItem.avg_cost,
-                side = "SELL",
-                fees = 0.0,
-                timestamp = System.currentTimeMillis()
-            )
-            transactionDao.addTransaction(transaction)
-        } else {
-            throw IllegalArgumentException("Not enough shares to sell")
-        }
-    }
 
 
     suspend fun insertNote(note: Note): Long {
          return noteDao.insert(note)
     }
 
-    suspend fun updateNote(note: Note): Int {
-        return noteDao.update(note.watchlistId, note.content)
+    suspend fun updateNote(note: Note, userId: Int): Int {
+        return noteDao.update(note.watchlistId, note.content, userId)
     }
 
     suspend fun deleteNote(note: Note) {
         noteDao.delete(note)
     }
 
-    suspend fun getNotesForWatchlist(watchlistId: Long): Note {
-        return noteDao.getNotesForWatchlist(watchlistId)
+    suspend fun getNotesForWatchlist(watchlistId: Long, userId: Int): Note {
+        return noteDao.getNotesForWatchlist(watchlistId, userId)
     }
-    suspend fun insertAlert(alert: Alert) {
-        alertDao.insertAlert(alert)
+    suspend fun insertAlert(alert: Alert): Long {
+        return alertDao.insertAlert(alert)
     }
 
-    suspend fun updateAlert(alert: Alert) {
-        alertDao.updateAlert(alert)
+    suspend fun updateAlert(alert: Alert): Int {
+        return alertDao.updateAlert(alert.triggerParent, alert.userId, alert.symbol, alert.triggerPrice, alert.runCondition)
     }
 
     suspend fun deleteAlert(alert: Alert) {
         alertDao.deleteAlert(alert)
     }
 
-    suspend fun getTriggeredAlerts(userId: Int, symbol: String, triggerParentId: Long): Alert {
-        return alertDao.getTriggeredAlerts(userId, symbol, triggerParentId)
+    suspend fun getAlerts(userId: Int, symbol: String, triggerParent: String): Alert? {
+        return alertDao.getAlerts(userId, symbol, triggerParent)
     }
+
+    suspend fun toggleAlertActive(parent: String, userId: Int, symbol: String, isActive: Boolean, ) {
+        alertDao.toggleAlertActive(parent, userId, symbol, isActive)
+    }
+
+
 
 }
 

@@ -94,7 +94,7 @@ private fun installTriggers(db: SupportSQLiteDatabase) {
             NEW.userId,
             NEW.qty,
             (NEW.qty * NEW.price) + IFNULL(NEW.fees, 0),
-            NEW.price,
+           ((NEW.qty * NEW.price) + IFNULL(NEW.fees, 0)) / NEW.qty,
             0
           )
           ON CONFLICT(userId, symbol) DO UPDATE SET
@@ -149,7 +149,7 @@ private fun installTriggers(db: SupportSQLiteDatabase) {
 
     Log.d("StockAppDatabase", "Triggers installed")
 }
-val MIGRATION_X_Y = object : Migration(1, 22) {
+val MIGRATION_X_Y = object : Migration(1, 31) {
     override fun migrate(db: SupportSQLiteDatabase) {
 
         // Drop any old unique-on-symbol index (name may vary by Room version)
@@ -173,7 +173,7 @@ val MIGRATION_X_Y = object : Migration(1, 22) {
 @Database(
     entities = [User::class, WatchList::class, Stock::class, Portfolio::class, Transaction::class, Alert::class, Note::class],
     views = [WatchListWithSymbol::class],
-    version = 22,
+    version = 31,
     exportSchema = false
 )
 abstract class StockAppDatabase : RoomDatabase() {

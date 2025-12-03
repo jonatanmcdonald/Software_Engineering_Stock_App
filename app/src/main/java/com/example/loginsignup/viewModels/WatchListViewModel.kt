@@ -8,6 +8,7 @@ import androidx.lifecycle.asFlow
 import com.example.loginsignup.App
 import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
+import com.example.loginsignup.data.db.entity.Alert
 import com.example.loginsignup.data.db.entity.Note
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.WatchList
@@ -21,6 +22,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
+import com.example.loginsignup.PriceNotificationService
+
+
 
 private const val CALLS_PER_MINUTE = 60              // your real limit
 private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
@@ -29,6 +33,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     private val limiter = (application as App).rateLimiter
     private var priceJob: Job? = null
     private val debounceDuration = 500L
+    private val notificationService = PriceNotificationService(application)
+
     private val ignoreNextSearch = MutableStateFlow(false)
 
     // --- Search state exposed to UI ---
@@ -108,19 +114,18 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                     noteId = w.noteId,
                     imageUrl = w.imageUrl,
                     content = w.content,
+
                     // price/change/isUp preserved
                 )
                     ?: // new item → seed placeholder (keeps UI smooth; prices come in live)
                     WatchUi(
                         id = w.id,
                         name = w.name ?: "",
-                        ticker = w.ticker ?: "",
                         noteId = w.noteId,
                         imageUrl = w.imageUrl,
                         content = w.content,
-                        change = null,
-                        changePercent = null,
-                        isUp = null
+                        ticker = w.ticker ?: "",
+                        isUp = null,
                     )
             }
         }
@@ -187,6 +192,14 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
             val changePc: Double? = resp.percentChange
            // Log.d("WatchListViewModel", "updateOneRow: $resp")
             //Log.d("WatchListViewModel", "updateOneRow: $latestPx")
+            val alert = repository.getAlerts(w.userId, w.ticker ?: "", "Watchlist")
+            //Log.d("WatchListViewModel", "updateOneRow: $w")
+            //Log.d("WatchListViewModel", "updateOneRow: $alert")
+
+            if(alert != null && alert.isActive){
+                checkAlertCondition(alert, latestPx)
+            }
+
 
             WatchUi(
                 id = w.id,
@@ -196,7 +209,11 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 imageUrl = w.imageUrl,
                 content = w.content,
                 price = latestPx,
+                hasAlert = alert != null,
+                alertParameter = alert?.runCondition ?: "",
+                alertPrice = alert?.triggerPrice ?: 0.0,
                 change = change,
+                alertActive = alert?.isActive ?: true,
                 changePercent = changePc,
                 isUp = change?.let { it > 0.0 }
             )
@@ -210,12 +227,45 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 imageUrl = w.imageUrl,
                 content = w.content,
                 price = 0.0,
+                hasAlert = false,
+                alertParameter = "",
+                alertPrice = 0.0,
+                alertActive = true,
                 change = null,
                 changePercent = null,
                 isUp = null
             )
         }
     }
+
+    private fun checkAlertCondition(
+        alert: Alert,
+        latestPx: Double
+    ): Boolean {
+        val isTriggered = when (alert.runCondition) {
+            "GREATER_THAN" -> latestPx > alert.triggerPrice
+            "LESS_THAN" -> latestPx < alert.triggerPrice
+            "EQUAL_TO" -> kotlin.math.abs(latestPx - alert.triggerPrice) < 0.0001
+            else -> false
+        }
+
+        Log.d("WatchListViewModel", "checkAlertCondition: $isTriggered")
+        if (isTriggered) {
+            val alertText = when (alert.runCondition) {
+                "GREATER_THAN" -> "has gone above watch price"
+                "LESS_THAN" -> "has gone below watch price"
+                "EQUAL_TO" -> "has reached watch price"
+                else -> ""
+            }
+            notificationService.sendPriceNotification(latestPx, alert.triggerParent, alert.symbol, alertText)
+            viewModelScope.launch {
+                repository.toggleAlertActive(alert.triggerParent, alert.userId, alert.symbol, false)
+            }
+        }
+
+        return isTriggered
+    }
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
         _selectedStock.value = null
@@ -249,10 +299,22 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     suspend fun upsertNoteContent(note: Note): UpsertResult{
-       val updated = repository.updateNote(note)
+       val updated = repository.updateNote(note, note.userId)
         if (updated > 0) return UpsertResult.Updated
         val rowId = repository.insertNote(note)
         return if (rowId != -1L) UpsertResult.Inserted else UpsertResult.AlreadyExists
+    }
+
+    suspend fun upsertAlert(alert: Alert): UpsertResult{
+        val updated = repository.updateAlert(alert)
+        if (updated > 0) return UpsertResult.Updated
+        val rowId = repository.insertAlert(alert)
+        return if (rowId != -1L) UpsertResult.Inserted else UpsertResult.AlreadyExists
+    }
+
+    suspend fun toggleAlertActive(parent: String, userId: Int, symbol: String, isActive: Boolean)
+    {
+        repository.toggleAlertActive(parent, userId,  symbol,isActive)
     }
 
 }
