@@ -51,7 +51,10 @@ fun PortfolioScreen(
     onNavigateToSearch: () -> Unit
 ) {
     // start live updates for this user
-    LaunchedEffect(userId) { pvm.startPortfolioValueUpdate(userId) }
+    LaunchedEffect(userId) {
+        pvm.startPortfolioValueUpdate(userId)
+        pvm.loadGainsLosses(userId)
+    }
 
     val rows by pvm.portfolioRows.collectAsState(emptyList())
     val isLoading by pvm.isLoading.collectAsState()
@@ -64,6 +67,10 @@ fun PortfolioScreen(
     val dayPnl = remember(rows) { rows.sumOf { it.dayChange ?: 0.0 } }
 
     var selectedStock by remember { mutableStateOf<LivePortfolio?>(null)}
+
+    val gains by pvm.gainsLosses.collectAsState(emptyList())
+
+    var showGainsDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -157,6 +164,44 @@ fun PortfolioScreen(
 
             }
         }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            FloatingActionButton(
+                containerColor = Color(0xFF16A34A),
+                contentColor = Color.White,
+                onClick = { showGainsDialog = true }
+            ) { Text("Gains") }
+        }
+
+        if (showGainsDialog) {
+            AlertDialog(
+                onDismissRequest = { showGainsDialog = false},
+                title = { Text("Gains/Losses") },
+                text = {
+                    Column {
+
+                        gains.forEach { entry ->
+                            Text(
+                                "${entry.periodMonths} months:: $${"%.2f".format(entry.gainOrLoss)}",
+                                color = if (entry.gainOrLoss >= 0) Color(0xFF16A34A) else Color(0xFFDC2626),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {showGainsDialog = false}) {
+                        Text("Close")
+                    }
+                }
+            )
+        }
+
     }
 }
 

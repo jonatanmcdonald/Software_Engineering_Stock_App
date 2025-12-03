@@ -9,6 +9,7 @@ import com.example.loginsignup.data.db.StockAppDatabase
 import com.example.loginsignup.data.db.StockAppRepository
 import com.example.loginsignup.data.db.entity.Portfolio
 import com.example.loginsignup.data.db.entity.Transaction
+import com.example.loginsignup.data.models.GainsLosses
 import com.example.loginsignup.screens.LivePortfolio
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -31,6 +32,9 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _gainsLosses = MutableStateFlow<List< GainsLosses>>(emptyList())
+    val gainsLosses: StateFlow<List<GainsLosses>> = _gainsLosses.asStateFlow()
 
     private val repository: StockAppRepository
 
@@ -201,4 +205,74 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         return repository.getTransForUser(userId)
     }
 
-}
+    fun loadGainsLosses(userId: Int) {
+        viewModelScope.launch {
+                repository.getTransForUser(userId).collect { transactions->
+                _gainsLosses.value = listOf(
+                    calculateGainLoss(transactions,3),
+                    calculateGainLoss(transactions,6),
+                    calculateGainLoss(transactions,12)
+                )
+            }
+        }
+    }
+
+    private fun calculateGainLoss(
+        transactions: List<Transaction>,
+        months: Int
+    ): GainsLosses {
+
+        val cutoff = System.currentTimeMillis() - months * 30L * 24 * 60 * 60 * 1000
+
+        val filtered = transactions.filter { it.timestamp >= cutoff }
+
+        val realized = computeRealizedPnL(filtered)
+
+        return GainsLosses(
+            periodMonths = months,
+            gainOrLoss = realized
+        )
+    }
+
+    private fun computeRealizedPnL(transactions: List<Transaction>): Double {
+        var realizedPnL = 0.0
+
+        val grouped = transactions.groupBy { it.symbol }
+
+        for ((_, txnsForSymbol) in grouped) {
+
+            var totalShares = 0
+            var totalCost = 0.0
+
+
+            val sorted = txnsForSymbol.sortedBy { it.timestamp }
+
+            for (t in sorted) {
+
+                if (t.side.equals("buy", ignoreCase = true)) {
+
+                    totalCost += t.qty * t.price + t.fees
+                    totalShares += t.qty
+                }
+                else if (t.side.equals("sell", ignoreCase = true)) {
+                    if (totalShares <= 0) continue
+
+                    val avgCostPerShare = totalCost / totalShares
+
+                    val proceeds = t.qty * t.price - t.fees
+                    val costRemoved = avgCostPerShare * t.qty
+
+                    val pnl = proceeds - costRemoved
+                    realizedPnL += pnl
+
+                    totalCost -= avgCostPerShare * t.qty
+                    totalShares -= t.qty
+                }
+            }
+        }
+
+            return realizedPnL
+        }
+    }
+
+
