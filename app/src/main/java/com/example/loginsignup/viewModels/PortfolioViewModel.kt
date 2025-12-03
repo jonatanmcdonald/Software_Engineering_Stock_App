@@ -156,7 +156,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
             val marketValue: Double = last * p.qty
-            val unrealized: Double = marketValue.let { marketValue - p.cost_basis}
+            val unrealized: Double = marketValue - p.cost_basis
 
             val dayChange: Double?   = changePerShare?.let { it * p.qty }
             val totalPnl: Double = unrealized + p.realized_pnl
