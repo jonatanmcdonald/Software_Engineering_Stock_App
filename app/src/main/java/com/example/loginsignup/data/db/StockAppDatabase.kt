@@ -17,6 +17,7 @@ import com.example.loginsignup.data.db.dao.UserDao
 import com.example.loginsignup.data.db.dao.WatchListDao
 import com.example.loginsignup.data.db.entity.Alert
 import com.example.loginsignup.data.db.entity.Note
+import com.example.loginsignup.data.db.entity.NoteMedia
 import com.example.loginsignup.data.db.entity.Portfolio
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.Transaction
@@ -149,7 +150,7 @@ private fun installTriggers(db: SupportSQLiteDatabase) {
 
     Log.d("StockAppDatabase", "Triggers installed")
 }
-val MIGRATION_X_Y = object : Migration(1, 31) {
+val MIGRATION_X_Y = object : Migration(1, 38) {
     override fun migrate(db: SupportSQLiteDatabase) {
 
         // Drop any old unique-on-symbol index (name may vary by Room version)
@@ -171,9 +172,9 @@ val MIGRATION_X_Y = object : Migration(1, 31) {
 // ---------- Room DB ----------
 
 @Database(
-    entities = [User::class, WatchList::class, Stock::class, Portfolio::class, Transaction::class, Alert::class, Note::class],
+    entities = [User::class, WatchList::class, Stock::class, Portfolio::class, Transaction::class, Alert::class, Note::class, NoteMedia::class],
     views = [WatchListWithSymbol::class],
-    version = 31,
+    version = 38,
     exportSchema = false
 )
 abstract class StockAppDatabase : RoomDatabase() {

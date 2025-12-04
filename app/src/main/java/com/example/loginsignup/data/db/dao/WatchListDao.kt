@@ -74,15 +74,22 @@ interface WatchListDao {
         w.stockId   AS stockId,
         w.name      AS name,
         n.id        AS noteId,
-        n.imageUrl  AS imageUrl,
         n.content   AS content,
         n.timestamp AS timestamp,
         s.ticker    AS ticker,
         w.createdAt AS createdAt,
-        w.updatedAt AS updatedAt
+        w.updatedAt AS updatedAt,
+        m.mediaUris AS mediaUris          
     FROM watchlist w 
     JOIN stocks s ON s.id = w.stockId
     LEFT JOIN notes n ON n.watchlistId = w.id
+    LEFT JOIN (
+        SELECT
+            noteId,
+            GROUP_CONCAT(uri, '|') AS mediaUris
+        FROM note_media
+        GROUP BY noteId
+    ) m ON m.noteId = n.id
     WHERE w.userId = :userId
     ORDER BY w.updatedAt DESC, w.createdAt DESC
 """)

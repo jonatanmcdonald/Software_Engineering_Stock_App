@@ -22,15 +22,13 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["watchlistId", "userId"])]
+    indices = [Index(value = ["watchlistId", "userId"]), Index("userId")]
 )
 class Note(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
     val userId: Int,
     val watchlistId: Long,
-    val imageUrl: String? = null,
-    val title: String? = null,
     val content: String? = null,
     val timestamp: Long = System.currentTimeMillis()
 )

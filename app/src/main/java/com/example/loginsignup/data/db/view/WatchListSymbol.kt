@@ -12,12 +12,18 @@ import androidx.room.DatabaseView
     w.updatedAt,
     s.ticker AS ticker,
     n.id        AS noteId,
-    n.imageUrl  AS imageUrl,
     n.content   AS content,
     n.timestamp AS timestamp
   FROM watchlist w
   JOIN stocks s ON s.id = w.stockId
   LEFT JOIN notes n ON n.watchlistId = w.id
+  LEFT JOIN 
+  (
+    SELECT noteId,
+    GROUP_CONCAT(uri, '|') AS mediaUris
+    FROM note_media
+    GROUP BY noteId
+  ) m on m.noteId = n.id
 """)
 data class WatchListWithSymbol(
     val id: Long,
@@ -25,12 +31,12 @@ data class WatchListWithSymbol(
     val stockId: Long,
     val name: String?,
     val noteId: Long?,      // nullable
-    val imageUrl: String?,  // nullable
     val content: String?,   // nullable
-    val timestamp: Long?,   // 🔴 make this nullable if note is optional
+    val timestamp: Long?,
     val createdAt: Long,
     val updatedAt: Long,
-    val ticker: String?
+    val ticker: String?,
+    val mediaUris: String?
 )
 
 

@@ -14,7 +14,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
 ],
-    indices = [Index(value = ["triggerParent", "symbol", "userId"], unique = true)]
+    indices = [Index(value = ["triggerParent", "symbol", "userId"], unique = true), Index("userId")]
 )
 data class Alert(
     @PrimaryKey(autoGenerate = true)

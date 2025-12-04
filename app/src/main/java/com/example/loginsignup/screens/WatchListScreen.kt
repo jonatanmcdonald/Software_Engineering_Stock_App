@@ -1,6 +1,12 @@
 package com.example.loginsignup.screens
 
 
+import android.content.Context
+import android.net.Uri
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.loginsignup.data.db.entity.WatchList
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,12 +30,24 @@ import androidx.compose.runtime.getValue
 
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
+import coil.compose.AsyncImage
 import com.example.loginsignup.data.db.entity.Alert
 import com.example.loginsignup.data.db.entity.Note
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.Locale
 
 data class WatchRow(
     val ticker: String
+)
+
+data class UiMedia(
+    val uri: String,
+    val type: String
 )
 
 data class WatchUi(
@@ -46,8 +64,10 @@ data class WatchUi(
     val alertParameter: String = "",
     val alertPrice: Double = 0.0,
     val isUp: Boolean? = false,         // null if change unknown
-    val alertActive: Boolean = true
+    val alertActive: Boolean = true,
+    val media: List<String> = emptyList(),
 )
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,25 +157,14 @@ fun WatchListScreen(
                             change = item.change,
                             changePercent = item.changePercent,
                             noteContent = item.content,
-                            noteImageUrl = item.imageUrl,
+                            media = item.media,
                             onDelete = { wvm.delete(item.id) },
                             hasAlert = item.hasAlert,
                             alertParameter = item.alertParameter,
                             alertPrice = item.alertPrice,
                             alertActive = item.alertActive,
-                            onUpsertNote ={ content ->
-                                scope.launch {
-                                    wvm.upsertNoteContent(
-                                        Note(
-                                            content = content,
-                                            watchlistId = item.id,
-                                            imageUrl = item.imageUrl,
-                                            timestamp = System.currentTimeMillis(),
-                                            userId = userId
-                                        )
-                                    )
-                                }
-                            },
+                            noteId = item.noteId,
+
                             onUpsertAlert = { parameter, price, alertActive -> scope.launch {  wvm.upsertAlert(
                                 Alert(
                                     symbol = item.ticker,
@@ -171,8 +180,18 @@ fun WatchListScreen(
                                 scope.launch {
                                     wvm.toggleAlertActive("Watchlist", userId, item.ticker, isActive)
                                 }
+                            },
+                            onSaveNoteWithMedia = { content, media, existingNoteId ->
+                                scope.launch {
+                                    wvm.saveNoteWithMedia(
+                                       existingNoteId = existingNoteId,
+                                        content = content,
+                                        media = media,
+                                        watchlistId = item.id,
+                                        userId = userId
+                                    )
+                                }
                             }
-
                         )
 
                     }
@@ -211,6 +230,60 @@ fun WatchListScreen(
     }
 }
 
+@Composable
+fun NoteMediaPicker(
+    onMediaSelected: (UiMedia) -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val pickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val type = when {
+                uri.toString().contains("image") -> "image"
+                uri.toString().contains("video") -> "video"
+                else -> "unknown"
+            }
+
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val persistedUri = persistPickedMediaToInternal(
+                        context = context,
+                        source = uri,
+                        extension = if (type == "video") ".mp4" else ".jpg"
+                    )
+
+                    withContext(Dispatchers.Main) {
+                        onMediaSelected(
+                            UiMedia(
+                                uri = persistedUri.toString(),
+                                type = type
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    // TODO: optionally show a Snackbar / Toast
+                }
+            }
+        }
+    }
+
+    Button(
+        onClick = {
+            pickerLauncher.launch(
+                PickVisualMediaRequest(
+                    ActivityResultContracts.PickVisualMedia.ImageAndVideo
+                )
+            )
+        }
+    ) {
+        Text(text = "Pick Media")
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WatchCard(
@@ -220,16 +293,23 @@ private fun WatchCard(
     changePercent: Double?,
     isUp: Boolean?,
     noteContent: String? = null,
-    noteImageUrl: String? = null,
+    noteId: Long? = null,
+    onSaveNoteWithMedia:(
+        content: String,
+        media: List<UiMedia>,
+        existingNoteId: Long?
+    ) -> Unit,
+    media: List<String> = emptyList(),
     onDelete: () -> Unit,
     hasAlert: Boolean = false,          // from DB: does this watch have an alert
     alertParameter: String = "",        // e.g. "Less Than"
     alertPrice: Double = 0.0,           // alert threshold
     alertActive: Boolean = true,       // alert is active
-    onUpsertNote: (String) -> Unit,
     onUpsertAlert: (String, Double, Boolean) -> Unit,   // persist alert
-    onToggleAlertActive: (Boolean) -> Unit = {} //  toggle alert active
+    onToggleAlertActive: (Boolean) -> Unit = {}, //  toggle alert active
+
 ) {
+    Log.d("WatchList", "Media: $media")
     val alertOptions = listOf("LESS_THAN", "GREATER_THAN", "EQUAL_TO")
 
     // ===== NOTE STATE =====
@@ -237,6 +317,13 @@ private fun WatchCard(
     var editableNoteText by remember(noteContent) {
         mutableStateOf(noteContent.orEmpty())
     }
+
+
+   var localMedia by remember(noteId, media) {
+
+       mutableStateOf(media.map {uri -> UiMedia(uri, "image")})
+   }
+    Log.d("WatchList", "Media: $localMedia")
 
     // ===== ALERT STATE =====
     var showAlertEditor by remember { mutableStateOf(false) }
@@ -321,86 +408,138 @@ private fun WatchCard(
                 }
             }
 
+
+            // ===== Media Display
             Spacer(Modifier.height(8.dp))
-            // ===== NOTE EDITOR (BOTTOM) =====
-            if (showNoteEditor) {
+            if (localMedia.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = editableNoteText,
-                    onValueChange = { editableNoteText = it },
-                    label = { Text("Note") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = false,
-                    maxLines = 5
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    TextButton(onClick = { showNoteEditor = false }) {
-                        Text("Cancel")
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            showNoteEditor = false
-                            onUpsertNote(editableNoteText.trim())
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF171A21),
-                            contentColor = Color(0xFFB3C5FF)
-                        )
-                    ) {
-                        Text("Save")
-                    }
-                }
-            }
-            // ===== NOTE DISPLAY / ADD / EDIT =====
-            if (!noteContent.isNullOrBlank() && !showNoteEditor) {
                 Text(
-                    text = "Note",
+                    text = "Attached Media",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFFDEE4EA)
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFF1F2430), shape = MaterialTheme.shapes.medium)
-                        .padding(10.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    localMedia.forEach { media ->
+                        Log.d("WatchList", media.toString())
+                        if (media.type == "image" || media.type == "unknown") {
+                            AsyncImage(
+                                model = media.uri,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(64.dp),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            // simple video placeholder – you can upgrade this later
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .background(Color.DarkGray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Vid",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+                // ===== NOTE EDITOR (BOTTOM) =====
+                Spacer(Modifier.height(8.dp))
+                if (showNoteEditor) {
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editableNoteText,
+                        onValueChange = { editableNoteText = it },
+                        label = { Text("Note") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = false,
+                        maxLines = 5
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TextButton(onClick = { showNoteEditor = false }) {
+                            Text("Cancel")
+                        }
+
+                        Spacer(Modifier.width(8.dp))
+                        NoteMediaPicker { media ->
+                            localMedia = localMedia + media
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                showNoteEditor = false
+                                onSaveNoteWithMedia(editableNoteText.trim(), localMedia, noteId)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF171A21),
+                                contentColor = Color(0xFFB3C5FF)
+                            )
+                        ) {
+                            Text("Save")
+                        }
+                    }
+                }
+
+                // ===== NOTE DISPLAY / ADD / EDIT =====
+                if (!noteContent.isNullOrBlank() && !showNoteEditor) {
                     Text(
-                        text = noteContent,
+                        text = "Note",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFFDEE4EA)
                     )
-                }
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = {
-                    editableNoteText = noteContent
-                    showNoteEditor = true
-                }) {
-                    Text("Edit", color = Color(0xFFB3C5FF))
-                }
-            } else if (noteContent.isNullOrBlank() && !showNoteEditor) {
-                Text(
-                    text = "No note yet",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFDEE4EA),
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                    Spacer(Modifier.height(8.dp))
 
-                Spacer(Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF1F2430), shape = MaterialTheme.shapes.medium)
+                            .padding(10.dp)
+                    ) {
+                        Text(
+                            text = noteContent,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFFDEE4EA)
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = {
+                        editableNoteText = noteContent
+                        showNoteEditor = true
+                    }) {
+                        Text("Edit", color = Color(0xFFB3C5FF))
+                    }
+                } else if (noteContent.isNullOrBlank() && !showNoteEditor) {
+                    Text(
+                        text = "No note yet",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFDEE4EA),
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
 
-                TextButton(onClick = {
-                    editableNoteText = ""
-                    showNoteEditor = true
-                }, modifier = Modifier.align(Alignment.End)) {
-                    Text("Add Note", color = Color(0xFFB3C5FF))
+                    Spacer(Modifier.height(4.dp))
+
+                    TextButton(onClick = {
+                        editableNoteText = ""
+                        showNoteEditor = true
+                    }, modifier = Modifier.align(Alignment.End)) {
+                        Text("Add Note", color = Color(0xFFB3C5FF))
+                    }
                 }
-            }
+
 
             // ===== ALERT DISPLAY / ADD / EDIT BUTTON =====
             Spacer(Modifier.height(8.dp))
@@ -564,10 +703,30 @@ private fun WatchCard(
             }
 
 
-
-
         }
     }
+}
+
+fun persistPickedMediaToInternal(
+    context: Context,
+    source: Uri,
+    extension: String
+): Uri {
+    val input = context.contentResolver.openInputStream(source)
+        ?: throw IllegalStateException("Cannot open InputStream for $source")
+
+    val file = File(
+        context.filesDir,
+        "note_media_${System.currentTimeMillis()}$extension"
+    )
+
+    input.use { inStream ->
+        file.outputStream().use { outStream ->
+            inStream.copyTo(outStream)
+        }
+    }
+
+    return file.toUri()
 }
 
 

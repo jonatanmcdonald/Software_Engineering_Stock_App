@@ -1,5 +1,6 @@
 package com.example.loginsignup.data.db
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import com.example.loginsignup.data.db.dao.AlertDao
 import com.example.loginsignup.data.db.dao.NoteDao
@@ -10,6 +11,7 @@ import com.example.loginsignup.data.db.dao.UserDao
 import com.example.loginsignup.data.db.dao.WatchListDao
 import com.example.loginsignup.data.db.entity.Alert
 import com.example.loginsignup.data.db.entity.Note
+import com.example.loginsignup.data.db.entity.NoteMedia
 import com.example.loginsignup.data.db.entity.Portfolio
 import com.example.loginsignup.data.db.entity.Stock
 import com.example.loginsignup.data.db.entity.Transaction
@@ -21,6 +23,7 @@ import com.example.loginsignup.data.models.NewsItem
 import com.example.loginsignup.data.models.Profile
 import com.example.loginsignup.data.models.RetrofitInstance.api
 import com.example.loginsignup.data.models.RetrofitInstance.getApiKey
+import com.example.loginsignup.screens.UiMedia
 import kotlinx.coroutines.flow.Flow
 
 
@@ -135,6 +138,17 @@ class StockAppRepository(private val userDao: UserDao,
         alertDao.deleteAlert(alert)
     }
 
+    suspend fun insertNoteMedia(noteId:Long, uri:String, type:String, userId: Int) {
+        noteDao.insertNoteMedia(
+            NoteMedia(
+                noteId = noteId,
+                userId = userId,
+                uri = uri,
+                type = type
+            )
+        )
+    }
+
     suspend fun getAlerts(userId: Int, symbol: String, triggerParent: String): Alert? {
         return alertDao.getAlerts(userId, symbol, triggerParent)
     }
@@ -142,6 +156,57 @@ class StockAppRepository(private val userDao: UserDao,
     suspend fun toggleAlertActive(parent: String, userId: Int, symbol: String, isActive: Boolean, ) {
         alertDao.toggleAlertActive(parent, userId, symbol, isActive)
     }
+
+    suspend fun saveNoteWithMedia(
+        existingNoteId: Long?,
+        watchlistId: Long,
+        userId: Int,
+        content: String,
+        media: List<UiMedia>
+    ) {
+
+            val now = System.currentTimeMillis()
+
+            // 1) Upsert note and get noteId
+            val noteId = if (existingNoteId != null) {
+                // Update existing note
+                noteDao.update(
+                    watchListId = watchlistId,
+                    content = content,
+                    userId = userId
+                )
+                existingNoteId
+            } else {
+                // Insert new note
+                noteDao.insert(
+                    Note(
+                        watchlistId = watchlistId,
+                        userId = userId,
+                        content = content,
+                        timestamp = now
+                    )
+                )
+            }
+
+        Log.d("StockAppRepository", "saveNoteWithMedia: $noteId")
+
+            // 2) Replace media for that note with the provided list
+            noteDao.deleteNoteMediaById(noteId, userId)
+            //noteDao.deleteNote(noteId)
+
+            media.forEachIndexed { index, m ->
+                noteDao.insertNoteMedia(
+                    NoteMedia(
+                        noteId = noteId,
+                        uri = m.uri,
+                        type = m.type,
+                        sortOrder = index,
+                        userId = userId
+                    )
+                )
+            }
+    }
+
 
 
 

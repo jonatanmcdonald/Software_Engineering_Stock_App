@@ -23,8 +23,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 import com.example.loginsignup.PriceNotificationService
-
-
+import com.example.loginsignup.screens.UiMedia
 
 private const val CALLS_PER_MINUTE = 60              // your real limit
 private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
@@ -107,13 +106,17 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
             val existingById = current.associateBy { it.id }
             watchlist.map { w ->
                 val prev = existingById[w.id]
+
+                val mediaList: List<String> =
+                    w.mediaUris?.split("|") ?.filter{it.isNotBlank()} ?: emptyList()
+
                 prev?.copy(
                     // existing item → keep live fields, refresh static labels
                     name = w.name ?: "",
                     ticker = w.ticker ?: "",
                     noteId = w.noteId,
-                    imageUrl = w.imageUrl,
                     content = w.content,
+                    media = mediaList
 
                     // price/change/isUp preserved
                 )
@@ -122,9 +125,9 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                         id = w.id,
                         name = w.name ?: "",
                         noteId = w.noteId,
-                        imageUrl = w.imageUrl,
                         content = w.content,
                         ticker = w.ticker ?: "",
+                        media = mediaList,
                         isUp = null,
                     )
             }
@@ -206,7 +209,6 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 name = w.name ?: "",
                 ticker = w.ticker ?: "",
                 noteId = w.noteId,
-                imageUrl = w.imageUrl,
                 content = w.content,
                 price = latestPx,
                 hasAlert = alert != null,
@@ -215,7 +217,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 change = change,
                 alertActive = alert?.isActive ?: true,
                 changePercent = changePc,
-                isUp = change?.let { it > 0.0 }
+                isUp = change?.let { it > 0.0 },
+                media = w.mediaUris?.split("|") ?.filter{it.isNotBlank()} ?: emptyList()
             )
         } catch (t: Throwable) {
             // Fall back to whatever we had
@@ -224,7 +227,6 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 name = w.name ?: "",
                 ticker = w.ticker ?: "",
                 noteId = w.noteId,
-                imageUrl = w.imageUrl,
                 content = w.content,
                 price = 0.0,
                 hasAlert = false,
@@ -233,7 +235,8 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                 alertActive = true,
                 change = null,
                 changePercent = null,
-                isUp = null
+                isUp = null,
+                media = emptyList()
             )
         }
     }
@@ -298,11 +301,22 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         _stockList.value = emptyList()
     }
 
-    suspend fun upsertNoteContent(note: Note): UpsertResult{
-       val updated = repository.updateNote(note, note.userId)
-        if (updated > 0) return UpsertResult.Updated
-        val rowId = repository.insertNote(note)
-        return if (rowId != -1L) UpsertResult.Inserted else UpsertResult.AlreadyExists
+    fun saveNoteWithMedia(
+        existingNoteId: Long?,
+        watchlistId: Long,
+        userId: Int,
+        content: String,
+        media: List<UiMedia>
+    ) {
+        viewModelScope.launch {
+            repository.saveNoteWithMedia(
+                existingNoteId = existingNoteId,
+                watchlistId = watchlistId,
+                userId = userId,
+                content = content,
+                media = media
+            )
+        }
     }
 
     suspend fun upsertAlert(alert: Alert): UpsertResult{
@@ -316,5 +330,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     {
         repository.toggleAlertActive(parent, userId,  symbol,isActive)
     }
+
+
 
 }
