@@ -19,8 +19,27 @@ interface UserDao {
     @Query("SELECT * FROM user_table WHERE email = :email AND password = :password Limit 1")
     fun getUserByEmailAndPassword(email: String, password: String): User?
 
-    @Query("SELECT * FROM user_table WHERE email = :email Limit 1")
-    fun getUserByEmail(email: String): User?
+    @Query("""
+        SELECT * FROM user_table 
+        WHERE TRIM(LOWER(email)) = TRIM(LOWER(:email)) 
+        LIMIT 1
+    """)
+    suspend fun getUserByEmail(email: String): User?
 
+    @Query("""
+        SELECT EXISTS(
+            SELECT 1 FROM user_table 
+            WHERE TRIM(LOWER(email)) = TRIM(LOWER(:email)) 
+            LIMIT 1
+        )
+    """)
+    suspend fun emailExists(email: String): Boolean
 
+    @Query("""
+        UPDATE user_table
+        SET password = :newPassword
+        WHERE email = :email
+    """)
+    suspend fun resetPassword(email: String, newPassword: String): Int
 }
+

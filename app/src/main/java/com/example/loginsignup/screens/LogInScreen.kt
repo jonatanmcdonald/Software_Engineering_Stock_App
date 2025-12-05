@@ -2,6 +2,7 @@ package com.example.loginsignup.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -41,8 +42,7 @@ import com.example.loginsignup.viewModels.UserViewModel
 
 @Composable
 fun LogInScreen(onSignedIn: () -> Unit,
-                onViewTerms: () -> Unit,
-                //stockAppViewModel: StockAppViewModel? = null
+                onForgotPassword: () -> Unit,
                 userViewModel: UserViewModel = viewModel()
 )
 {
@@ -120,6 +120,17 @@ fun LogInScreen(onSignedIn: () -> Unit,
             ){
                 Text(text = "Log In", fontSize = 18.sp)
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Forgot your password?",
+                modifier = Modifier.clickable {
+                    onForgotPassword()
+                }
+            )
+
+
         }
     }
 }
@@ -128,5 +139,5 @@ fun LogInScreen(onSignedIn: () -> Unit,
 @Preview
 @Composable
 fun DefaultPreviewOfLogInScreen() {
-    LogInScreen(onSignedIn = {}, onViewTerms = {})
+    LogInScreen(onSignedIn = {}, onForgotPassword = {})
 }

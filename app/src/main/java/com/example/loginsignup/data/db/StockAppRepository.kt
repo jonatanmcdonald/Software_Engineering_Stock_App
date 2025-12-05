@@ -47,8 +47,21 @@ class StockAppRepository(private val userDao: UserDao,
         return userDao.getUserByEmailAndPassword(email, password)
     }
 
-     fun isEmailTaken(email: String): Boolean {
+    suspend fun isEmailTaken(email: String): Boolean {
         return userDao.getUserByEmail(email) != null
+    }
+
+    suspend fun getUserByEmail(email: String): User? {
+        return userDao.getUserByEmail(email.trim().lowercase())
+    }
+
+    suspend fun resetPassword(email: String, newPassword: String): Boolean {
+        val rows = userDao.resetPassword(email, newPassword)
+        return rows > 0
+    }
+
+    suspend fun emailExists(email: String): Boolean {
+        return userDao.emailExists(email.trim().lowercase())
     }
 
     suspend fun addWatchListItem(watchList: WatchList): Long {
