@@ -91,7 +91,6 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                 painterResource(id = R.drawable.user_icon),
                 textValue = firstName,
                 onValueChange = {firstName = it},
-                modifier = Modifier.height(50.dp)
 
             )
 
