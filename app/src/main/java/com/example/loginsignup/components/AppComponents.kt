@@ -3,6 +3,7 @@ package com.example.loginsignup.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -135,13 +136,15 @@ fun MyTextField(labelValue: String, painterResource: Painter) {
 fun MyTextField(labelValue: String,
                 painterResource: Painter,
                 textValue: String,
-                onValueChange: (String) -> Unit
+                onValueChange: (String) -> Unit,
+                modifier: Modifier = Modifier
 )
 {
 
 
     OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth(),
         label = { Text(text = labelValue) },
         value = textValue,
         onValueChange = onValueChange,
@@ -157,64 +160,13 @@ fun MyTextField(labelValue: String,
             unfocusedLabelColor = Color(0xFF9CA3AF)
 
         ),
+
         leadingIcon = {
             Icon(painter = painterResource, contentDescription = "user_name_icon")
         }
     )
 }
 
-/*
-@Composable
-fun PasswordTextFieldComponent(labelValue: String, painterResource: Painter) {
-    val password = remember {
-        mutableStateOf("")
-    }
-
-    val passwordVisible = remember {
-        mutableStateOf(false)
-    }
-
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(text = labelValue) },
-        value = password.value,
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = Color.Green,
-            focusedLabelColor = Color.Green,
-            cursorColor = Color.Green,
-            unfocusedContainerColor = Color.LightGray
-
-        ),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        onValueChange = {
-            password.value = it
-        },
-        leadingIcon = {
-            Icon(painter = painterResource, contentDescription = "user_name_icon")
-        },
-
-        trailingIcon = {
-
-            val iconImage = if(passwordVisible.value){
-                Icons.Filled.Visibility
-            } else{
-                Icons.Filled.VisibilityOff
-            }
-
-            val description = if(passwordVisible.value){
-                stringResource(id = R.string.hide_password)
-            } else{
-                stringResource(id = R.string.show_password)
-            }
-
-            IconButton(onClick = {passwordVisible.value = !passwordVisible.value}) {
-                Icon(imageVector = iconImage, contentDescription = description)
-            }
-        },
-
-        visualTransformation = if(passwordVisible.value) VisualTransformation.None else PasswordVisualTransformation()
-    )
-}*/
 
 
 @Composable

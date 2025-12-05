@@ -104,11 +104,35 @@ fun PortfolioScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                containerColor = Color(0xFF2563EB),
-                contentColor = Color.White,
-                onClick = onNavigateToSearch
-            ) { Icon(Icons.Default.Add, contentDescription = "Add") }
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // Left FAB
+                FloatingActionButton(
+                    onClick = onNavigateToSearch,
+                    containerColor = Color(0xFF2563EB),
+                    contentColor = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start=28.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add")
+                }
+
+                // Right FAB
+                FloatingActionButton(
+                    onClick = { showGainsDialog = true },
+                    containerColor = Color(0xFF16A34A),
+                    contentColor = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(start=28.dp)
+                ) {
+                    Text("Gains")
+                }
+            }
         }
     ) { inner ->
         Column(
@@ -199,18 +223,6 @@ fun PortfolioScreen(
                 }
 
             }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            FloatingActionButton(
-                containerColor = Color(0xFF16A34A),
-                contentColor = Color.White,
-                onClick = { showGainsDialog = true }
-            ) { Text("Gains") }
         }
 
         if (showGainsDialog) {

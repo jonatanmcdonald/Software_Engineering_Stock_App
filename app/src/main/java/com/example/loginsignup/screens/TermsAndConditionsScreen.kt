@@ -47,12 +47,12 @@ fun TermsAndConditionsScreen(onBack: () -> Unit) {
             Button(onClick = {
                 onBack()
             }, modifier = Modifier
-                .fillMaxWidth()      // full width
-                .height(56.dp),      // large height
+                .fillMaxWidth()
+                .height(56.dp),
                 shape = RectangleShape,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00E0C7), // teal accent
-                    contentColor = Color.Black          // text color
+                    containerColor = Color(0xFF00E0C7),
+                    contentColor = Color.Black
                 ), contentPadding = PaddingValues(vertical = 12.dp)
             ){
                 Text(text = "Go to SignUpScreen", fontSize = 20.sp)
