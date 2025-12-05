@@ -27,35 +27,35 @@ import com.example.loginsignup.components.HeadingTextComponent
 
 
 @Composable
-fun TermsAndConditionsScreen(onBack: () -> Unit) {
+fun TermsAndConditionsScreen(onBack: () -> Unit) { // A composable function for the Terms and Conditions screen.
     Surface(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(28.dp)
+            .fillMaxSize() // Fills the maximum available size.
+            .background(MaterialTheme.colorScheme.background) // Sets the background color.
+            .padding(28.dp) // Adds padding.
 
     ) {
-        Column(modifier = Modifier.fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Column(modifier = Modifier.fillMaxSize() // A vertically arranged layout that fills the maximum size.
+            .background(MaterialTheme.colorScheme.background), // Sets the background color.
+            verticalArrangement = Arrangement.spacedBy(12.dp) // Adds spacing between the children.
             
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp)) // Adds vertical space.
 
-            HeadingTextComponent(value = stringResource(id = R.string.TermsAndConditionPage))
+            HeadingTextComponent(value = stringResource(id = R.string.TermsAndConditionPage)) // Displays a heading text component with the terms and conditions string.
 
-            Button(onClick = {
+            Button(onClick = { // A button to navigate back to the previous screen.
                 onBack()
             }, modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-                shape = RectangleShape,
-                colors = ButtonDefaults.buttonColors(
+                .fillMaxWidth() // Fills the maximum available width.
+                .height(56.dp), // Sets the height of the button.
+                shape = RectangleShape, // Sets the shape of the button.
+                colors = ButtonDefaults.buttonColors( // Sets the colors of the button.
                     containerColor = Color(0xFF00E0C7),
                     contentColor = Color.Black
-                ), contentPadding = PaddingValues(vertical = 12.dp)
+                ), contentPadding = PaddingValues(vertical = 12.dp) // Adds padding to the content of the button.
             ){
-                Text(text = "Go to SignUpScreen", fontSize = 20.sp)
+                Text(text = "Go to SignUpScreen", fontSize = 20.sp) // The text to display on the button.
 
 
             }

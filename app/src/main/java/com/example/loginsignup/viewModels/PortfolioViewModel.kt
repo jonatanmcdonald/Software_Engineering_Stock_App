@@ -26,40 +26,42 @@ import java.util.concurrent.atomic.AtomicInteger
 private const val CALLS_PER_MINUTE = 60              // your real limit
 private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+// This class is the ViewModel for the Portfolio screen.
 class PortfolioViewModel(application: Application) : AndroidViewModel(application) {
-    private val limiter = (application as App).rateLimiter
-    private var priceJob: Job? = null
+    private val limiter = (application as App).rateLimiter // The rate limiter for API calls.
+    private var priceJob: Job? = null // The job for fetching prices.
 
-    private val notificationService = PriceNotificationService(application)
-
-
-    private val _portfolioRows = MutableStateFlow<List<LivePortfolio>>(emptyList())
-    val portfolioRows: StateFlow<List<LivePortfolio>> = _portfolioRows.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _gainsLosses = MutableStateFlow<List< GainsLosses>>(emptyList())
-    val gainsLosses: StateFlow<List<GainsLosses>> = _gainsLosses.asStateFlow()
-
-    private val repository: StockAppRepository
-
-    init {
-        val db = StockAppDatabase.getDatabase(application)
-        val userDao = db.userDao()
-        val watchListDao = db.watchListDao()
-        val stockDao = db.stockDao()
-        val transactionDao = db.transactionDao()
-        val portfolioDao = db.portfolioDao()
-        val alertDao = db.alertDao()
-        val noteDao = db.noteDao()
+    private val notificationService = PriceNotificationService(application) // The service for sending notifications.
 
 
-        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao)
+    private val _portfolioRows = MutableStateFlow<List<LivePortfolio>>(emptyList()) // A private mutable state flow to hold the list of portfolio rows.
+    val portfolioRows: StateFlow<List<LivePortfolio>> = _portfolioRows.asStateFlow() // A public state flow to expose the list of portfolio rows.
+
+    private val _isLoading = MutableStateFlow(false) // A private mutable state flow to track the loading state.
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow() // A public state flow to expose the loading state.
+
+    private val _gainsLosses = MutableStateFlow<List< GainsLosses>>(emptyList()) // A private mutable state flow to hold the list of gains and losses.
+    val gainsLosses: StateFlow<List<GainsLosses>> = _gainsLosses.asStateFlow() // A public state flow to expose the list of gains and losses.
+
+    private val repository: StockAppRepository // The repository for accessing data.
+
+    init { // The initializer block for the ViewModel.
+        val db = StockAppDatabase.getDatabase(application) // Gets the database instance.
+        val userDao = db.userDao() // Gets the user DAO.
+        val watchListDao = db.watchListDao() // Gets the watchlist DAO.
+        val stockDao = db.stockDao() // Gets the stock DAO.
+        val transactionDao = db.transactionDao() // Gets the transaction DAO.
+        val portfolioDao = db.portfolioDao() // Gets the portfolio DAO.
+        val alertDao = db.alertDao() // Gets the alert DAO.
+        val noteDao = db.noteDao() // Gets the note DAO.
+
+
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao) // Creates the repository.
 
     }
 
 
+    // This function reconciles the current portfolio list with the one from the database.
     private fun reconcileWithPortfolioList(portfolio: List<Portfolio>) {
         _portfolioRows.update { current ->
             val prevById = current.associateBy { it.id }
@@ -90,14 +92,15 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
 
 
     /** Call this once when the screen opens (pass the signed-in user's id). */
+    // This function starts the live update of the portfolio value.
     fun startPortfolioValueUpdate(userId: Int) {
-        priceJob?.cancel()
-        priceJob = viewModelScope.launch {
+        priceJob?.cancel() // Cancels the previous price job.
+        priceJob = viewModelScope.launch { // Launches a new coroutine in the ViewModel scope.
             // 1) Keep a live, mutable snapshot of the current watchlist for rotation
             var rotation: List<Portfolio> = emptyList()
 
             // 2) Listen to watchlist changes and reconcile UI labels immediately
-            val portfolioCollector = launch {
+            val portfolioCollector = launch { // Launches a new coroutine to collect portfolio changes.
                 repository.observeUserPortfolio(userId)
                     .distinctUntilChanged() // avoid noisy re-emits
                     .collectLatest { list ->
@@ -109,9 +112,9 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             // 3) Continuous drip loop: one API call every GAP_MS, cycling through rotation
             val existingIndex = AtomicInteger(0)
             val index = existingIndex // (or keep a local var if you prefer)
-            while (isActive) {
+            while (isActive) { // Loops while the coroutine is active.
                 val snapshot = rotation // read current list
-                if (snapshot.isNotEmpty()) {
+                if (snapshot.isNotEmpty()) { // If the snapshot is not empty.
                     val i = index.getAndIncrement()
                     val target = snapshot[i % snapshot.size]
 
@@ -123,14 +126,15 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
                         Log.w("PortfolioViewModel", "fetch failed for ${target.symbol}: ${t.message}")
                     }
                 }
-                delay(GAP_MS)
+                delay(GAP_MS) // Delays for the specified gap time.
             }
             // cancel child collector if loop exits
-            portfolioCollector.cancel()
+            portfolioCollector.cancel() // Cancels the portfolio collector.
         }
     }
 
     /** Upsert a single row atomically, preserving watchlist order. */
+    // This function merges a single row into the portfolio rows.
     private fun mergeRow(row: LivePortfolio) {
         _portfolioRows.update { current ->
             val byId = current.associateBy { it.id }.toMutableMap()
@@ -139,6 +143,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // This function updates a single row in the portfolio.
     private suspend fun updateOneRow(p: Portfolio): LivePortfolio {
         val existing = _portfolioRows.value.find { it.id == p.id }
 
@@ -211,6 +216,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // This function checks if an alert condition has been met.
     private fun checkAlertCondition(
         alert: Alert,
         latestPx: Double,
@@ -242,11 +248,13 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         return isTriggered
     }
 
+    // This function toggles the active state of an alert.
     suspend fun toggleAlertActive(parent: String, userId: Int, symbol: String, isActive: Boolean)
     {
         repository.toggleAlertActive(parent, userId, symbol, isActive)
     }
 
+    // This function upserts an alert.
     suspend fun upsertAlert(alert: Alert): UpsertResult{
         val updated = repository.updateAlert(alert)
         if (updated > 0) return UpsertResult.Updated
@@ -255,6 +263,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
 
+    // This function saves a sell transaction.
     fun saveSellTransaction(transaction: Transaction)
     {
         viewModelScope.launch {
@@ -262,10 +271,12 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // This function retrieves all transactions for a user.
     fun getTransForUser(userId: Int): Flow<List<Transaction>> {
         return repository.getTransForUser(userId)
     }
 
+    // This function loads the gains and losses for a user.
     fun loadGainsLosses(userId: Int) {
         viewModelScope.launch {
                 repository.getTransForUser(userId).collect { transactions->
@@ -278,6 +289,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // This function calculates the gain or loss for a given period.
     private fun calculateGainLoss(
         transactions: List<Transaction>,
         months: Int
@@ -295,6 +307,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
         )
     }
 
+    // This function computes the realized profit and loss.
     private fun computeRealizedPnL(transactions: List<Transaction>): Double {
         var realizedPnL = 0.0
 

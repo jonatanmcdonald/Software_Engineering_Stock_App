@@ -10,12 +10,14 @@ private const val BASE_URL = "https://finnhub.io/api/v1/"
 
 private const val API_KEY = BuildConfig.FINN_API_KEY
 
+// This object provides a singleton instance of the Retrofit API service.
 object RetrofitInstance {
+    // A lazy-initialized property that creates the Retrofit API service.
     val api: ApiService by lazy {
         // 1. --- CREATE THE LOGGING INTERCEPTOR ---
         // This is the key to debugging. It will log all network activity.
        //val logging = HttpLoggingInterceptor()
-        //logging.setLevel(HttpLoggingInterceptor.Level.BODY) // Use .BODY to see the full request and response
+        //logging.setLevel(HttpLogging.Interceptor.Level.BODY) // Use .BODY to see the full request and response
 
         // 2. --- CREATE THE OkHttp CLIENT AND ADD THE INTERCEPTOR ---
         //val client = OkHttpClient.Builder()
@@ -23,13 +25,14 @@ object RetrofitInstance {
             //.build()
 
 
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+        Retrofit.Builder() // Creates a new Retrofit builder.
+            .baseUrl(BASE_URL) // Sets the base URL for the API.
+            .addConverterFactory(GsonConverterFactory.create()) // Adds a converter factory for serializing and deserializing data.
            // .client(client)
-            .build()
-            .create(ApiService::class.java)
+            .build() // Builds the Retrofit instance.
+            .create(ApiService::class.java) // Creates an implementation of the API service.
     }
 
+    // This function returns the API key.
     fun getApiKey(): String  = API_KEY
 }

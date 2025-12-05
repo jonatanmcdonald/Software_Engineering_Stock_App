@@ -13,40 +13,42 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+// This class is the ViewModel for the News screen.
 class NewsViewModel(application: Application): AndroidViewModel(application) {
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _isLoading = MutableStateFlow(false) // A private mutable state flow to track the loading state.
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow() // A public state flow to expose the loading state.
 
-    private val _news = MutableStateFlow(emptyList<NewsItem>())
-    val news: StateFlow<List<NewsItem>> = _news.asStateFlow()
-
-
-    private val repository: StockAppRepository
-
-    init {
-
-        val db = StockAppDatabase.getDatabase(application)
-        val userDao = db.userDao()
-        val watchListDao = db.watchListDao()
-        val stockDao = db.stockDao()
-        val transactionDao = db.transactionDao()
-        val portfolioDao = db.portfolioDao()
-        val alertDao = db.alertDao()
-        val noteDao = db.noteDao()
+    private val _news = MutableStateFlow(emptyList<NewsItem>()) // A private mutable state flow to hold the list of news items.
+    val news: StateFlow<List<NewsItem>> = _news.asStateFlow() // A public state flow to expose the list of news items.
 
 
-        repository =
+    private val repository: StockAppRepository // The repository for accessing data.
+
+    init { // The initializer block for the ViewModel.
+
+        val db = StockAppDatabase.getDatabase(application) // Gets the database instance.
+        val userDao = db.userDao() // Gets the user DAO.
+        val watchListDao = db.watchListDao() // Gets the watchlist DAO.
+        val stockDao = db.stockDao() // Gets the stock DAO.
+        val transactionDao = db.transactionDao() // Gets the transaction DAO.
+        val portfolioDao = db.portfolioDao() // Gets the portfolio DAO.
+        val alertDao = db.alertDao() // Gets the alert DAO.
+        val noteDao = db.noteDao() // Gets the note DAO.
+
+
+        repository = // Creates the repository.
             StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao)
-        getNews()
+        getNews() // Fetches the news.
     }
 
+    // This function fetches the news.
     @RequiresApi(Build.VERSION_CODES.O)
     fun getNews()
     {
-        viewModelScope.launch {
-            _isLoading.value = true
-             _news.value = repository.getNewsThisMonth()
-            _isLoading.value = false
+        viewModelScope.launch { // Launches a coroutine in the ViewModel scope.
+            _isLoading.value = true // Sets the loading state to true.
+             _news.value = repository.getNewsThisMonth() // Fetches the news from the repository.
+            _isLoading.value = false // Sets the loading state to false.
         }
 
     }

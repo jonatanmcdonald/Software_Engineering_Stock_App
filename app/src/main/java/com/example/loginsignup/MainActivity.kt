@@ -11,32 +11,35 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.example.loginsignup.navigation.AppNavHost
 import com.example.loginsignup.ui.theme.MyAppTheme
 
+// This is the main activity of the application.
 class MainActivity : ComponentActivity()
 {
+    // This requests notification permission from the user.
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Log.d("MainActivity", "Notification permission granted? $granted")
         }
 
-    override fun onCreate(savedInstanceState: Bundle?)
+    override fun onCreate(savedInstanceState: Bundle?) // This function is called when the activity is created.
     {
         super.onCreate(savedInstanceState)
-        ensureNotificationPermission()
+        ensureNotificationPermission() // Ensures that the app has notification permission.
 
-        setContent {
+        setContent { // Sets the content of the activity.
 
-            MyAppTheme {
-                AppNavHost()
+            MyAppTheme { // Applies the app theme.
+                AppNavHost() // Sets the navigation host.
             }
         }
     }
 
+    // This function ensures that the app has notification permission.
     private fun ensureNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Checks if the Android version is Tiramisu or higher.
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) // Checks if the app has notification permission.
                 != PackageManager.PERMISSION_GRANTED
             ) {
-                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) // Requests notification permission.
             }
         }
     }

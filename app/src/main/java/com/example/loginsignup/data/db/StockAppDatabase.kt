@@ -31,11 +31,13 @@ import kotlinx.coroutines.withContext
 
 // ---------- CSV import helpers ----------
 
+// Populates the stock table from a CSV file.
 suspend fun StockAppDatabase.populateFromCsv(context: Context) {
     val items = parseStocksCsv(context)
     stockDao().insertChunked(items)
 }
 
+// Parses a CSV file of stocks and returns a list of Stock entities.
 suspend fun parseStocksCsv(context: Context): List<Stock> = withContext(Dispatchers.IO) {
     val list = ArrayList<Stock>(10_000)
     context.resources.openRawResource(R.raw.stocks).bufferedReader().useLines { lines ->
@@ -150,6 +152,7 @@ private fun installTriggers(db: SupportSQLiteDatabase) {
 
     Log.d("StockAppDatabase", "Triggers installed")
 }
+// A migration object to handle database schema changes.
 val MIGRATION_X_Y = object : Migration(1, 38) {
     override fun migrate(db: SupportSQLiteDatabase) {
 

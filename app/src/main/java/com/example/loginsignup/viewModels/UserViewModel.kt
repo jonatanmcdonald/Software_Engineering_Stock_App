@@ -31,6 +31,7 @@ fun hashPassword(password: String): String {
 
 }
 
+// This class is the ViewModel for the User.
 class UserViewModel(application: Application): AndroidViewModel(application) {
 
     // LiveData to hold all user data.
@@ -43,7 +44,7 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
     // An immutable live data to expose the login result to the UI.
     val loginResult: LiveData<Boolean> = _loginResult
 
-    init {
+    init { // The initializer block for the ViewModel.
         // Get the DAOs from the database.
         val userDao = StockAppDatabase.getDatabase(application).userDao()
         val watchListDao = StockAppDatabase.getDatabase(application).watchListDao()
@@ -110,12 +111,14 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    // This function checks if an email exists in the database.
     suspend fun checkEmailExists(email: String): Boolean {
         return withContext(Dispatchers.IO) {
             repository.emailExists(email)
         }
     }
 
+    // This function verifies the security answer for a user.
     suspend fun verifySecurityAnswer(email: String, answer: String): Boolean {
         return withContext(Dispatchers.IO) {
             // however you store it:
@@ -124,6 +127,7 @@ class UserViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    // This function resets the password for a user.
     suspend fun resetPassword(email: String, password: String): Boolean
     {
         val hashedPassword = hashPassword(password)

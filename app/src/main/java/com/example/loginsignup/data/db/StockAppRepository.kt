@@ -27,6 +27,7 @@ import com.example.loginsignup.screens.UiMedia
 import kotlinx.coroutines.flow.Flow
 
 
+// This class is the single source of truth for all app data.
 class StockAppRepository(private val userDao: UserDao,
                          private val watchListDao: WatchListDao,
                          private val stockDao: StockDao,
@@ -37,37 +38,46 @@ class StockAppRepository(private val userDao: UserDao,
 
                          ) {
 
+    // A LiveData object that contains a list of all users.
     val readAllData: LiveData<List<User>> = userDao.readAllData()
 
+    // This function adds a new user to the database.
     suspend fun addUser(user: User) {
         userDao.addUser(user)
     }
 
+    // This function retrieves a user from the database by email and password.
      fun getUserByEmailAndPassword(email: String, password: String): User? {
         return userDao.getUserByEmailAndPassword(email, password)
     }
 
+    // This function checks if an email address is already taken.
     suspend fun isEmailTaken(email: String): Boolean {
         return userDao.getUserByEmail(email) != null
     }
 
+    // This function retrieves a user from the database by email.
     suspend fun getUserByEmail(email: String): User? {
         return userDao.getUserByEmail(email.trim().lowercase())
     }
 
+    // This function resets the password for a user.
     suspend fun resetPassword(email: String, newPassword: String): Boolean {
         val rows = userDao.resetPassword(email, newPassword)
         return rows > 0
     }
 
+    // This function checks if an email address exists in the database.
     suspend fun emailExists(email: String): Boolean {
         return userDao.emailExists(email.trim().lowercase())
     }
 
+    // This function adds a new item to the watchlist.
     suspend fun addWatchListItem(watchList: WatchList): Long {
         return watchListDao.addWatchListItem(watchList)
     }
 
+    // This function updates an existing item in the watchlist.
     suspend fun updateWatchListItem(item: WatchList): Int {
         return watchListDao.updateWatchListItem(
             item.userId,
@@ -78,24 +88,29 @@ class StockAppRepository(private val userDao: UserDao,
         )
     }
 
+    // This function deletes an item from the watchlist.
     suspend fun deleteWatchListItem(itemId: Long): Int {
         return watchListDao.deleteWatchListItem(itemId)
     }
 
 
+    // This function searches for stocks by a given query.
     fun searchStocks(query: String): LiveData<List<Stock>> {
         return stockDao.searchStocks(query)
     }
 
 
+    // This function retrieves the ID of a stock by its ticker.
     suspend fun getStockId( ticker: String): Long {
         return stockDao.getStockId(ticker)
     }
 
+    // This function observes all watchlist items for a specific user.
     fun observeAllForUsers(userId: Int): Flow<List<WatchListWithSymbol>> {
         return watchListDao.observeAllForUser(userId)
     }
 
+    // This function retrieves the news for the current month.
     suspend fun getNewsThisMonth(): List<NewsItem>
     {
         val news = api.getNews(token = getApiKey())
@@ -103,54 +118,67 @@ class StockAppRepository(private val userDao: UserDao,
         return news
     }
 
+    // This function fetches the last price for a given stock symbol.
      suspend fun fetchPrice(symbol: String): LastQuote =
          api.getLastQuote(symbol = symbol, token = getApiKey())
 
+    // This function retrieves the profile for a given stock symbol.
     suspend fun getProfile(symbol: String): Profile =
         api.getProfile(symbol = symbol, token = getApiKey())
 
 
+    // This function retrieves all transactions for a specific user.
      fun getTransForUser(userId: Int): Flow<List<Transaction>> {
         return transactionDao.getTransForUser(userId)
      }
 
+    // This function adds a new transaction to the database.
     suspend fun addTransaction(transaction: Transaction) {
         return transactionDao.addTransaction(transaction)
     }
 
+    // This function observes the portfolio of a specific user.
     fun observeUserPortfolio(userId: Int): Flow<List<Portfolio>> {
         return portfolioDao.getUserPortfolio(userId)
     }
 
 
 
+    // This function inserts a new note into the database.
     suspend fun insertNote(note: Note): Long {
          return noteDao.insert(note)
     }
 
+    // This function updates an existing note in the database.
     suspend fun updateNote(note: Note, userId: Int): Int {
         return noteDao.update(note.watchlistId, note.content, userId)
     }
 
+    // This function deletes a note from the database.
     suspend fun deleteNote(note: Note) {
         noteDao.delete(note)
     }
 
+    // This function retrieves all notes for a specific watchlist item.
     suspend fun getNotesForWatchlist(watchlistId: Long, userId: Int): Note {
         return noteDao.getNotesForWatchlist(watchlistId, userId)
     }
+    // This function inserts a new alert into the database.
     suspend fun insertAlert(alert: Alert): Long {
         return alertDao.insertAlert(alert)
     }
 
+    // This function updates an existing alert in the database.
     suspend fun updateAlert(alert: Alert): Int {
         return alertDao.updateAlert(alert.triggerParent, alert.userId, alert.symbol, alert.triggerPrice, alert.runCondition)
     }
 
+    // This function deletes an alert from the database.
     suspend fun deleteAlert(alert: Alert) {
         alertDao.deleteAlert(alert)
     }
 
+    // This function inserts a new media item for a note into the database.
     suspend fun insertNoteMedia(noteId:Long, uri:String, type:String, userId: Int) {
         noteDao.insertNoteMedia(
             NoteMedia(
@@ -162,14 +190,17 @@ class StockAppRepository(private val userDao: UserDao,
         )
     }
 
+    // This function retrieves an alert from the database by its user ID, symbol, and trigger parent.
     suspend fun getAlerts(userId: Int, symbol: String, triggerParent: String): Alert? {
         return alertDao.getAlerts(userId, symbol, triggerParent)
     }
 
+    // This function toggles the active state of an alert.
     suspend fun toggleAlertActive(parent: String, userId: Int, symbol: String, isActive: Boolean, ) {
         alertDao.toggleAlertActive(parent, userId, symbol, isActive)
     }
 
+    // This function saves a note with its associated media.
     suspend fun saveNoteWithMedia(
         existingNoteId: Long?,
         watchlistId: Long,

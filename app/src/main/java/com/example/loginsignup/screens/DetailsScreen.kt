@@ -38,29 +38,29 @@ data class DetailsUi(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
-    ticker: String,
-    userId: Int,
-    onBack: () -> Unit,
-    svm: SearchViewModel = viewModel()
+    ticker: String, // The stock ticker symbol to display details for.
+    userId: Int, // The ID of the current user.
+    onBack: () -> Unit, // Callback function to navigate back.
+    svm: SearchViewModel = viewModel() // Injects the SearchViewModel.
 ) {
-    // Kick off any price/details update the VM exposes for this screen
+    // This effect runs when the ticker symbol changes.
     LaunchedEffect(ticker) {
         // If your VM method accepts ticker, call startDetailsPriceUpdate(ticker)
         // Keeping your original no-arg call in case that's what you implemented:
         svm.startDetailsPriceUpdate(ticker)
     }
 
-    val details by svm.viewPage.collectAsState()     // assumed to expose DetailsUi
-    val price by svm.price.collectAsState()          // assumed to expose { price: BigDecimal? }
+    val details by svm.viewPage.collectAsState()     // Collects the stock details from the ViewModel as state.
+    val price by svm.price.collectAsState()          // Collects the stock price from the ViewModel as state.
 
     // Safely extract latest price as BigDecimal (or $0.00)
     val latestPrice: BigDecimal = remember(price) {
         price.price.toBigDecimal()
     }
 
-    var qtyText by rememberSaveable { mutableStateOf("1") }
+    var qtyText by rememberSaveable { mutableStateOf("1") } // State for the quantity text field.
     // keep only digits and at most one dot
-    fun sanitizeQty(input: String): String {
+    fun sanitizeQty(input: String): String { // Sanitizes the quantity input to allow only numbers and a single decimal point.
         var dotSeen = false
         val sb = StringBuilder()
         for (c in input) {
@@ -69,68 +69,68 @@ fun DetailsScreen(
         }
         return sb.toString()
     }
-    val qty = remember(qtyText) { qtyText.toBigDecimalOrNull() ?: BigDecimal.ZERO }
+    val qty = remember(qtyText) { qtyText.toBigDecimalOrNull() ?: BigDecimal.ZERO } // Converts the quantity text to a BigDecimal.
 
-    val total: BigDecimal = remember(latestPrice, qty) {
+    val total: BigDecimal = remember(latestPrice, qty) { // Calculates the total cost of the transaction.
         latestPrice.multiply(qty).setScale(2, RoundingMode.HALF_UP)
     }
-    Scaffold(
-        topBar = {
+    Scaffold( // A basic Material Design layout structure.
+        topBar = { // The top app bar of the screen.
             TopAppBar(
-                title = {
-                    val title = buildString {
+                title = { // The title of the app bar.
+                    val title = buildString { // Builds the title string.
                         append(details.name?.takeIf { it.isNotBlank() } ?: ticker)
                         details.ticker?.takeIf { it.isNotBlank() }?.let { append(" ($it)") }
                     }
                     Text(title)
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
+                navigationIcon = { // The navigation icon of the app bar.
+                    IconButton(onClick = onBack) { // A button to navigate back.
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         }
-    ) { padding ->
+    ) { padding -> // The content of the screen.
         Column(
             modifier = Modifier
-                .padding(padding)
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(padding) // Applies padding from the Scaffold.
+                .padding(16.dp) // Applies additional padding.
+                .fillMaxSize(), // Fills the maximum available size.
+            verticalArrangement = Arrangement.spacedBy(16.dp) // Adds spacing between the children.
         ) {
             // --- Price Card ---
-            Card {
+            Card { // A card to display the stock price.
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Price", style = MaterialTheme.typography.labelMedium)
+                    Text("Price", style = MaterialTheme.typography.labelMedium) // The title of the card.
                     Text(
-                        text = latestPrice.toMoney(),
+                        text = latestPrice.toMoney(), // The current price of the stock.
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
                     val ch = price.change?.toBigDecimal()
                     val cp = price.changePercent?.toBigDecimal()
 
-                    val sign = when (price.isUp) {
+                    val sign = when (price.isUp) { // Determines the sign of the price change.
                         true -> "+"
                         false -> "−"
                         else -> ""
                     }
                     val changeAbs = ch?.abs()?.setScale(2, RoundingMode.HALF_UP)?.toPlainString()
                     val pctAbs = cp?.abs()?.setScale(2, RoundingMode.HALF_UP)?.toPlainString()
-                    val color = when (price.isUp) {
+                    val color = when (price.isUp) { // Determines the color of the price change text.
                         true -> MaterialTheme.colorScheme.tertiary
                         false -> MaterialTheme.colorScheme.error
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                     Text(
                         text = if (ch == null || cp == null) "—"
-                        else "$sign$${changeAbs} (${pctAbs}%)",
+                        else "$sign$${changeAbs} (${pctAbs}%)", // The price change and percentage.
                         color = color,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -138,27 +138,27 @@ fun DetailsScreen(
             }
 
             // --- Quick buy calculator ---
-            Card {
+            Card { // A card to calculate the total cost of a purchase.
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Quick Calculator", style = MaterialTheme.typography.labelMedium)
+                    Text("Quick Calculator", style = MaterialTheme.typography.labelMedium) // The title of the card.
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         OutlinedTextField(
                             value = qtyText,
-                            onValueChange = { qtyText = sanitizeQty(it) },
+                            onValueChange = { qtyText = sanitizeQty(it) }, // Updates the quantity text when the value changes.
                             singleLine = true,
-                            label = { Text("Quantity") },
+                            label = { Text("Quantity") }, // The label for the text field.
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            text = "× ${latestPrice.toMoney()}",
+                            text = "× ${latestPrice.toMoney()}", // The current price of the stock.
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -167,17 +167,17 @@ fun DetailsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Total", style = MaterialTheme.typography.titleMedium)
+                        Text("Total", style = MaterialTheme.typography.titleMedium) // The label for the total cost.
                         Text(
-                            total.toMoney(),
+                            total.toMoney(), // The total cost.
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
 
                     Button(
-                        onClick = {
-                                    val transaction = Transaction(
+                        onClick = { // The action to perform when the button is clicked.
+                                    val transaction = Transaction( // Creates a new transaction object.
                                         qty = qty.toInt(),
                                         price = latestPrice.toDouble(),
                                         timestamp = System.currentTimeMillis(),
@@ -186,36 +186,36 @@ fun DetailsScreen(
                                         fees = 0.0,
                                         userId = userId
                                     )
-                                    svm.saveTransaction(transaction)
-                                    onBack()
+                                    svm.saveTransaction(transaction) // Saves the transaction to the database.
+                                    onBack() // Navigates back to the previous screen.
                                   },
-                        enabled = qty > BigDecimal.ZERO && latestPrice > BigDecimal.ZERO,
+                        enabled = qty > BigDecimal.ZERO && latestPrice > BigDecimal.ZERO, // The button is enabled only if the quantity and price are greater than zero.
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("BUY • ${total.toMoney()}")
+                        Text("BUY • ${total.toMoney()}") // The text to display on the button.
                     }
                 }
             }
 
             // --- Company facts ---
-            Card {
+            Card { // A card to display company facts.
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    InfoRow("Ticker", details.ticker.orDash())
-                    InfoRow("Name", details.name.orDash())
-                    InfoRow("Exchange", details.exchange.orDash())
-                    InfoRow("Industry", details.finnhubIndustry.orDash())
-                    InfoRow("IPO", details.ipo.orDash())
-                    InfoRow("Market Cap", details.marketCapitalization.toMarketCap(details.currency ?: "USD"))
-                    InfoRow("Shares Out.", details.shareOutstanding?.let { prettyNumber(it) } ?: "—")
-                    InfoRow("Currency", details.currency.orDash())
-                    InfoRow("Country", details.country.orDash())
-                    InfoRow("Phone", details.phone.orDash())
-                    InfoRow("Website", details.weburl.orDash())
+                    InfoRow("Ticker", details.ticker.orDash()) // Displays the ticker symbol.
+                    InfoRow("Name", details.name.orDash()) // Displays the company name.
+                    InfoRow("Exchange", details.exchange.orDash()) // Displays the stock exchange.
+                    InfoRow("Industry", details.finnhubIndustry.orDash()) // Displays the industry.
+                    InfoRow("IPO", details.ipo.orDash()) // Displays the IPO date.
+                    InfoRow("Market Cap", details.marketCapitalization.toMarketCap(details.currency ?: "USD")) // Displays the market capitalization.
+                    InfoRow("Shares Out.", details.shareOutstanding?.let { prettyNumber(it) } ?: "—") // Displays the number of outstanding shares.
+                    InfoRow("Currency", details.currency.orDash()) // Displays the currency.
+                    InfoRow("Country", details.country.orDash()) // Displays the country.
+                    InfoRow("Phone", details.phone.orDash()) // Displays the phone number.
+                    InfoRow("Website", details.weburl.orDash()) // Displays the website.
                 }
             }
         }
@@ -225,7 +225,7 @@ fun DetailsScreen(
 /* ---------- Small UI helpers ---------- */
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun InfoRow(label: String, value: String) { // A composable to display a row of information.
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -236,12 +236,12 @@ private fun InfoRow(label: String, value: String) {
     }
 }
 
-private fun String?.orDash(): String = if (this.isNullOrBlank()) "—" else this
+private fun String?.orDash(): String = if (this.isNullOrBlank()) "—" else this // Returns a dash if the string is null or blank.
 
-private fun BigDecimal?.toMoney(): String =
+private fun BigDecimal?.toMoney(): String = // Converts a BigDecimal to a money string.
     this?.setScale(2, RoundingMode.HALF_UP)?.let { "$" + it.toPlainString() } ?: "—"
 
-private fun Double?.toMarketCap(
+private fun Double?.toMarketCap( // Converts a Double to a market cap string.
     currency: String,
     inputIsMillions: Boolean = true
 ): String {
@@ -253,7 +253,7 @@ private fun Double?.toMarketCap(
     val a = abs(v)
     val sym = symbolFor(currency)
 
-    return when {
+    return when { // Formats the market cap based on its value.
         a >= 1e12 -> String.format(Locale.US, "%s%.2fT", sym, v / 1e12)
         a >= 1e9  -> String.format(Locale.US, "%s%.2fB", sym, v / 1e9)
         a >= 1e6  -> String.format(Locale.US, "%s%.2fM", sym, v / 1e6)
@@ -261,18 +261,18 @@ private fun Double?.toMarketCap(
         else      -> String.format(Locale.US, "%s%.0f",  sym, v)
     }
 }
-private fun symbolFor(currency: String): String = when (currency.uppercase()) {
+private fun symbolFor(currency: String): String = when (currency.uppercase()) { // Returns the symbol for a given currency.
     "USD" -> "$"
     "EUR" -> "€"
     "GBP" -> "£"
     else  -> "" // keep generic if unknown
 }
 
-private fun prettyNumber(n: Double): String {
+private fun prettyNumber(n: Double): String { // Formats a number to be more readable.
     val sign = if (n < 0) "-" else ""
     val a = abs(n)
 
-    val (value, suffix) = when {
+    val (value, suffix) = when { // Determines the suffix for the number.
         a >= 1e12 -> a / 1e12 to "T"
         a >= 1e9  -> a / 1e9  to "B"
         a >= 1e6  -> a / 1e6  to "M"
@@ -280,7 +280,7 @@ private fun prettyNumber(n: Double): String {
         else      -> a        to ""
     }
 
-    val num = if (suffix.isEmpty()) {
+    val num = if (suffix.isEmpty()) { // Formats the number based on the suffix.
         String.format(Locale.US, "%.0f", value)
     } else {
         String.format(Locale.US, "%.2f", value)

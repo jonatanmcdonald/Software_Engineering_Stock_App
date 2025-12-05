@@ -1,4 +1,4 @@
-package com.example.loginsignup.screens
+package com.example.loginsignup.screens // Package declaration for the screen
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -34,192 +34,193 @@ import com.example.loginsignup.viewModels.UserViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 
+// Enum to represent the steps in the forgot password flow
 private enum class ForgotStep {
-    ENTER_EMAIL,
-    ANSWER_SECURITY,
-    ENTER_NEW_PASSWORD,
-    SUCCESS
+    ENTER_EMAIL, // Step to enter email
+    ANSWER_SECURITY, // Step to answer security question
+    ENTER_NEW_PASSWORD, // Step to enter new password
+    SUCCESS // Step for success message
 }
 
 @Composable
 fun ForgotPasswordScreen(
-    uvm: UserViewModel = viewModel()
+    uvm: UserViewModel = viewModel() // Inject the UserViewModel
 ) {
-    var email by remember { mutableStateOf("") }
-    var securityAnswer by remember { mutableStateOf("") }
-    var newPassword by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") } // State for email input
+    var securityAnswer by remember { mutableStateOf("") } // State for security answer input
+    var newPassword by remember { mutableStateOf("") } // State for new password input
 
-    var step by remember { mutableStateOf(ForgotStep.ENTER_EMAIL) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var step by remember { mutableStateOf(ForgotStep.ENTER_EMAIL) } // State to track the current step
+    var error by remember { mutableStateOf<String?>(null) } // State for error messages
 
-    val scope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope() // Coroutine scope for launching async operations
 
     Surface(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(28.dp),
-        color = MaterialTheme.colorScheme.background
+            .fillMaxSize() // Fill the entire screen
+            .background(MaterialTheme.colorScheme.background) // Set background color
+            .padding(28.dp), // Add padding
+        color = MaterialTheme.colorScheme.background // Set surface color
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize(), // Fill the entire column
+            verticalArrangement = Arrangement.spacedBy(12.dp), // Arrange children with spacing
+            horizontalAlignment = Alignment.CenterHorizontally // Center children horizontally
         ) {
-            HeadingTextComponent(value = "Reset Password")
-            Spacer(modifier = Modifier.height(20.dp))
+            HeadingTextComponent(value = "Reset Password") // Display the heading
+            Spacer(modifier = Modifier.height(20.dp)) // Add vertical space
 
-            // Error message
+            // Error message display
             if (!error.isNullOrBlank()) {
                 Text(
-                    text = error!!,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = error!!, // Display the error message
+                    color = MaterialTheme.colorScheme.error, // Set error text color
+                    style = MaterialTheme.typography.bodyMedium, // Set text style
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp)) // Add vertical space
             }
 
+            // A when statement to control which part of the UI is shown based on the current step.
             when (step) {
-                ForgotStep.ENTER_EMAIL -> {
+                ForgotStep.ENTER_EMAIL -> { // UI for entering email
                     Text(
-                        text = "Enter your email address",
-                        modifier = Modifier.align(Alignment.Start)
+                        text = "Enter your email address", // Prompt text
+                        modifier = Modifier.align(Alignment.Start) // Align to the start
                     )
                     MyTextField(
-                        labelValue = stringResource(id = R.string.email),
-                        painterResource = painterResource(id = R.drawable.email_symbol),
-                        textValue = email,
-                        onValueChange = { email = it }
+                        labelValue = stringResource(id = R.string.email), // Label for text field
+                        painterResource = painterResource(id = R.drawable.email_symbol), // Icon for text field
+                        textValue = email, // Bind to email state
+                        onValueChange = { email = it } // Update email state on change
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp)) // Add vertical space
 
                     Button(
                         onClick = {
-                            if (email.isBlank()) {
-                                error = "Email cannot be empty"
-                                return@Button
+                            if (email.isBlank()) { // Validate email input
+                                error = "Email cannot be empty" // Set error message
+                                return@Button // Exit the onClick lambda
                             }
-                            error = null
+                            error = null // Clear any previous error
 
-                            scope.launch {
-
-                                val exists = uvm.checkEmailExists(email)
-                                Log.d("ForgotPasswordScreen", "Checking email: $exists")
-                                if (exists) {
-                                    error = null
-                                    step = ForgotStep.ANSWER_SECURITY
-                                } else {
-                                    error = "Email not found"
+                            scope.launch { // Launch a coroutine
+                                val exists = uvm.checkEmailExists(email) // Check if email exists
+                                Log.d("ForgotPasswordScreen", "Checking email: $exists") // Log the result
+                                if (exists) { // If email exists
+                                    error = null // Clear error
+                                    step = ForgotStep.ANSWER_SECURITY // Move to the next step
+                                } else { // If email does not exist
+                                    error = "Email not found" // Set error message
                                 }
                             }
                         },
-                        modifier = Modifier.align(Alignment.End)
+                        modifier = Modifier.align(Alignment.End) // Align button to the end
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.SkipNext,
-                            contentDescription = "Next"
+                            imageVector = Icons.Outlined.SkipNext, // "Next" icon
+                            contentDescription = "Next" // Content description for accessibility
                         )
-                        Text(text = "Next")
+                        Text(text = "Next") // Button text
                     }
                 }
 
-                ForgotStep.ANSWER_SECURITY -> {
+                ForgotStep.ANSWER_SECURITY -> { // UI for answering security question
                     Text(
-                        text = "Enter the answer to your security question",
-                        modifier = Modifier.align(Alignment.Start)
+                        text = "Enter the answer to your security question", // Prompt text
+                        modifier = Modifier.align(Alignment.Start) // Align to the start
                     )
 
                     MyTextField(
-                        labelValue = stringResource(id = R.string.security_question),
-                        painterResource = painterResource(id = R.drawable.security_symbol),
-                        textValue = securityAnswer,
-                        onValueChange = { securityAnswer = it },
+                        labelValue = stringResource(id = R.string.security_question), // Label for text field
+                        painterResource = painterResource(id = R.drawable.security_symbol), // Icon for text field
+                        textValue = securityAnswer, // Bind to securityAnswer state
+                        onValueChange = { securityAnswer = it }, // Update securityAnswer state on change
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp)) // Add vertical space
 
                     Button(
                         onClick = {
-                            if (securityAnswer.isBlank()) {
-                                error = "Please enter your answer"
-                                return@Button
+                            if (securityAnswer.isBlank()) { // Validate security answer input
+                                error = "Please enter your answer" // Set error message
+                                return@Button // Exit the onClick lambda
                             }
-                            error = null
+                            error = null // Clear any previous error
 
-                            scope.launch {
-                                val correct = uvm.verifySecurityAnswer(email, securityAnswer)
-                                if (correct) {
-                                    step = ForgotStep.ENTER_NEW_PASSWORD
-                                } else {
-                                    error = "Incorrect answer. Please try again."
+                            scope.launch { // Launch a coroutine
+                                val correct = uvm.verifySecurityAnswer(email, securityAnswer) // Verify the security answer
+                                if (correct) { // If the answer is correct
+                                    step = ForgotStep.ENTER_NEW_PASSWORD // Move to the next step
+                                } else { // If the answer is incorrect
+                                    error = "Incorrect answer. Please try again." // Set error message
                                 }
                             }
                         },
-                        modifier = Modifier.align(Alignment.End)
+                        modifier = Modifier.align(Alignment.End) // Align button to the end
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.SkipNext,
-                            contentDescription = "Submit"
+                            imageVector = Icons.Outlined.SkipNext, // "Submit" icon
+                            contentDescription = "Submit" // Content description for accessibility
                         )
-                        Text(text = "Submit")
+                        Text(text = "Submit") // Button text
                     }
                 }
 
-                ForgotStep.ENTER_NEW_PASSWORD -> {
+                ForgotStep.ENTER_NEW_PASSWORD -> { // UI for entering new password
                     Text(
-                        text = "Enter a new password",
-                        modifier = Modifier.align(Alignment.Start)
+                        text = "Enter a new password", // Prompt text
+                        modifier = Modifier.align(Alignment.Start) // Align to the start
                     )
 
                     MyTextField(
-                        labelValue = stringResource(id = R.string.password),
-                        painterResource = painterResource(id = R.drawable.lock_icon),
-                        textValue = newPassword,
-                        onValueChange = { newPassword = it },
+                        labelValue = stringResource(id = R.string.password), // Label for text field
+                        painterResource = painterResource(id = R.drawable.lock_icon), // Icon for text field
+                        textValue = newPassword, // Bind to newPassword state
+                        onValueChange = { newPassword = it }, // Update newPassword state on change
                         // if your MyTextField supports password mode, pass the right flag here
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp)) // Add vertical space
 
                     Button(
                         onClick = {
 
-                            error = null
+                            error = null // Clear any previous error
 
-                            scope.launch {
-                                val ok = uvm.resetPassword(email, newPassword)
-                                if (ok) {
-                                    step = ForgotStep.SUCCESS
-                                } else {
-                                    error = "Something went wrong. Please try again."
+                            scope.launch { // Launch a coroutine
+                                val ok = uvm.resetPassword(email, newPassword) // Reset the password
+                                if (ok) { // If password reset was successful
+                                    step = ForgotStep.SUCCESS // Move to the success step
+                                } else { // If password reset failed
+                                    error = "Something went wrong. Please try again." // Set error message
                                 }
                             }
                         },
-                        modifier = Modifier.align(Alignment.End)
+                        modifier = Modifier.align(Alignment.End) // Align button to the end
                     ) {
-                        Text(text = "Reset Password")
+                        Text(text = "Reset Password") // Button text
                     }
                 }
 
-                ForgotStep.SUCCESS -> {
-                    Spacer(modifier = Modifier.height(40.dp))
+                ForgotStep.SUCCESS -> { // UI for success message
+                    Spacer(modifier = Modifier.height(40.dp)) // Add vertical space
                     Icon(
-                        imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = "Success",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.height(80.dp)
+                        imageVector = Icons.Filled.CheckCircle, // Success icon
+                        contentDescription = "Success", // Content description for accessibility
+                        tint = MaterialTheme.colorScheme.primary, // Set icon color
+                        modifier = Modifier.height(80.dp) // Set icon height
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(20.dp)) // Add vertical space
                     Text(
-                        text = "Password reset successfully!",
-                        style = MaterialTheme.typography.headlineSmall
+                        text = "Password reset successfully!", // Success message
+                        style = MaterialTheme.typography.headlineSmall // Set text style
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp)) // Add vertical space
                     Text(
-                        text = "You can now close this page and log in with your new password.",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "You can now close this page and log in with your new password.", // Informative text
+                        style = MaterialTheme.typography.bodyMedium // Set text style
                     )
                 }
             }
