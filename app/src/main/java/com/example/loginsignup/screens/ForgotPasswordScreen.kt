@@ -30,7 +30,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.loginsignup.R
 import com.example.loginsignup.components.HeadingTextComponent
 import com.example.loginsignup.components.MyTextField
-import com.example.loginsignup.components.NormalTextComponent
 import com.example.loginsignup.viewModels.UserViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope

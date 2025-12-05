@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import com.example.loginsignup.data.db.entity.Alert
-import com.example.loginsignup.data.db.entity.Note
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

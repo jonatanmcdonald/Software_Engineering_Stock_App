@@ -41,8 +41,7 @@ object MainDest {
     const val DETAILS = "details/{ticker}/{userId}"
     // A constant for the watchlist screen route.
     const val WATCHLIST = "watchlist"
-    // A constant for the profile screen route.
-    const val PROFILE = "profile"
+
     // A constant for the search screen route.
     const val SEARCH = "search"
 
