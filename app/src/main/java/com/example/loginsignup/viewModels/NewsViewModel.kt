@@ -14,14 +14,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 // This class is the ViewModel for the News screen.
+@RequiresApi(Build.VERSION_CODES.O)
 class NewsViewModel(application: Application): AndroidViewModel(application) {
     private val _isLoading = MutableStateFlow(false) // A private mutable state flow to track the loading state.
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow() // A public state flow to expose the loading state.
-
     private val _news = MutableStateFlow(emptyList<NewsItem>()) // A private mutable state flow to hold the list of news items.
     val news: StateFlow<List<NewsItem>> = _news.asStateFlow() // A public state flow to expose the list of news items.
-
-
     private val repository: StockAppRepository // The repository for accessing data.
 
     init { // The initializer block for the ViewModel.
@@ -42,7 +40,6 @@ class NewsViewModel(application: Application): AndroidViewModel(application) {
     }
 
     // This function fetches the news.
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getNews()
     {
         viewModelScope.launch { // Launches a coroutine in the ViewModel scope.
