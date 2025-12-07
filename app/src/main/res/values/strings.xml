@@ -16,8 +16,48 @@
     <string name="security_question">What is the name of your home town?</string>
 
 
-    <string name="terms_and_conditions">By continuing you accept ouer Privacy Policy and Term of Use</string>
-    <string name="TermsAndConditionPage">Hello, just for practice purpose</string>
+    <string name="terms_and_conditions">By continuing you accept our Privacy Policy and Term of Use</string>
+    <string name="TermsAndConditionPage">
+    Terms and Conditions\n\n
+    Last updated: January 1, 2025\n\n
+    Please read these Terms and Conditions ("Terms") carefully before using this application ("Stock Recording System"). By accessing or using the App, you agree to be bound by these Terms. If you do not agree with any part of the Terms, you may not use the App.\n\n
+    1. Use of the App\n\n
+    1.1. The App is provided for personal, non-commercial use. You agree to use the App only for lawful purposes and in accordance with these Terms.\n\n
+    1.2. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.\n\n
+    1.3. You agree not to:\n
+    • Attempt to reverse engineer, decompile, or modify the App.\n
+    • Use the App in a way that could damage, disable, or impair the App or interfere with other users.\n
+    • Use the App to transmit any harmful, abusive, or unlawful content.\n\n
+    2. Stock &amp; Financial Information\n\n
+    2.1. Any stock information, prices, or data shown in the App are for informational and record-keeping purposes only.\n\n
+    2.2. The App does not provide financial, investment, trading, or tax advice. You are solely responsible for any decisions made based on information recorded or displayed in the App.\n\n
+    2.3. We do not guarantee the accuracy, completeness, or timeliness of any financial data shown in the App.\n\n
+    3. Data and Privacy\n\n
+    3.1. By using the App, you agree that certain data you provide (such as notes, transactions, watchlists, or preferences) may be stored locally on your device and/or in a remote database, depending on how the App is configured.\n\n
+    3.2. We will take reasonable measures to protect your data, but no method of transmission or storage is completely secure. You acknowledge that you use the App at your own risk.\n\n
+    3.3. You are responsible for backing up any important information stored in the App.\n\n
+    4. Intellectual Property\n\n
+    4.1. All content, design, logos, and other visual elements in the App are owned by the App creator or licensed third parties and are protected by copyright and other intellectual property laws.\n\n
+    4.2. You may not copy, distribute, or create derivative works based on any part of the App without prior written permission.\n\n
+    5. Third-Party Services\n\n
+    5.1. The App may display, link to, or integrate with third-party services or content. We are not responsible for the availability, accuracy, or content of any third-party services.\n\n
+    5.2. Your use of third-party services may be governed by separate terms and privacy policies provided by those third parties.\n\n
+    6. Limitation of Liability\n\n
+    6.1. The App is provided "as is" and "as available" without any warranties of any kind, whether express or implied.\n\n
+    6.2. To the fullest extent permitted by law, we shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of data, loss of profits, or financial losses arising from:\n
+    • Your use or inability to use the App,\n
+    • Any errors or omissions in the App,\n
+    • Any actions you take based on information from the App.\n\n
+    7. Changes to the App and Terms\n\n
+    7.1. We may update or modify the App at any time, including adding, changing, or removing features.\n\n
+    7.2. We may update these Terms from time to time. When we do, we will revise the "Last updated" date above. Continued use of the App after changes take effect constitutes your acceptance of the new Terms.\n\n
+    8. Termination\n\n
+    8.1. We may suspend or terminate your access to the App at any time, with or without notice, if we believe you have violated these Terms or for any other reason at our discretion.\n\n
+    8.2. Upon termination, your right to use the App will immediately cease. Some provisions of these Terms, such as limitations of liability and intellectual property rights, will continue to apply even after termination.\n\n
+    9. Contact\n\n
+    If you have any questions about these Terms, you can contact the App developer or support team through the channels provided within the App.
+</string>
+
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
