@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LogInSignUp</string>
+    <string name="app_name">Stock Recording System</string>
     <string name="hello">Hey There,</string>
     <string name="test"> working</string>
     <string name="create_account">Create Account</string>
