@@ -112,7 +112,7 @@ fun PortfolioScreen(
                 // Left FAB
                 FloatingActionButton( // A floating action button to navigate to the search screen.
                     onClick = onNavigateToSearch,
-                    containerColor = Color(0xFF2563EB),
+                    containerColor = Color.Blue,
                     contentColor = Color.White,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -124,7 +124,7 @@ fun PortfolioScreen(
                 // Right FAB
                 FloatingActionButton( // A floating action button to show the gains/losses dialog.
                     onClick = { showGainsDialog = true },
-                    containerColor = Color(0xFF16A34A),
+                    containerColor = Color.Blue,
                     contentColor = Color.White,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
