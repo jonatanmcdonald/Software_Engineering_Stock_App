@@ -9,10 +9,10 @@ import androidx.compose.ui.graphics.Color
 
 
 @Composable
-fun LogInSignUp(){
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color.White
+fun LogInSignUp(){ // This composable function is the root of the application's UI.
+    Surface( // A Surface is a container that provides a background color.
+        modifier = Modifier.fillMaxSize(), // The Surface will fill the entire screen.
+        color = Color.White // The background color of the Surface.
     ) {
 
     }

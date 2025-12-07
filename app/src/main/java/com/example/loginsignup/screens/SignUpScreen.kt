@@ -46,102 +46,103 @@ import com.example.loginsignup.components.PasswordTextFieldComponent
 import com.example.loginsignup.data.db.entity.User
 import com.example.loginsignup.viewModels.UserViewModel
 
+// This function checks if the given email address has a valid format.
 fun isValidEmail(email: String): Boolean {
     return Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }
 
 @Composable
-fun SignUpScreen(onViewTerms: () -> Unit,
-                 onViewSignIn: () -> Unit,
-                 userViewModel: UserViewModel = viewModel(),
+fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to the Terms and Conditions screen.
+                 onViewSignIn: () -> Unit, // Callback function to navigate to the Sign In screen.
+                 userViewModel: UserViewModel = viewModel(), // Injects the UserViewModel.
                  )
 {
 
-    var firstName by remember { mutableStateOf("") }
-    var lastName by remember {mutableStateOf("")}
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var securityAnswer by remember {mutableStateOf("")}
-    var checked by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    var firstName by remember { mutableStateOf("") } // State for the first name input field.
+    var lastName by remember {mutableStateOf("")} // State for the last name input field.
+    var email by remember { mutableStateOf("") } // State for the email input field.
+    var password by remember { mutableStateOf("") } // State for the password input field.
+    var securityAnswer by remember {mutableStateOf("")} // State for the security answer input field.
+    var checked by remember { mutableStateOf(false) } // State for the checkbox.
+    val scrollState = rememberScrollState() // State for the scroll position of the column.
 
-    val context = LocalContext.current
+    val context = LocalContext.current // Gets the current Android context.
 
-    Surface(
+    Surface( // A basic Material Design surface.
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(30.dp)
+            .fillMaxSize() // Fills the maximum available size.
+            .background(MaterialTheme.colorScheme.background) // Sets the background color.
+            .padding(30.dp) // Adds padding to the surface.
     ) {
-        Column(modifier = Modifier.fillMaxSize()
-            .verticalScroll(scrollState)
-            .background(MaterialTheme.colorScheme.background),
+        Column(modifier = Modifier.fillMaxSize() // A vertically arranged layout that fills the maximum size.
+            .verticalScroll(scrollState) // Makes the column scrollable.
+            .background(MaterialTheme.colorScheme.background), // Sets the background color.
 
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            verticalArrangement = Arrangement.spacedBy(5.dp) // Adds spacing between the children.
         ) {
-            NormalTextComponent(value = stringResource(id = R.string.hello))
-            HeadingTextComponent(value = stringResource(id = R.string.create_account))
+            NormalTextComponent(value = stringResource(id = R.string.hello)) // Displays a normal text component with the hello string.
+            HeadingTextComponent(value = stringResource(id = R.string.create_account)) // Displays a heading text component with the create account string.
 
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(2.dp)) // Adds vertical space.
 
 
-            MyTextField(
+            MyTextField( // A custom text field for the first name input.
 
-                labelValue = stringResource(id = R.string.first_name),
-                painterResource(id = R.drawable.user_icon),
-                textValue = firstName,
-                onValueChange = {firstName = it},
+                labelValue = stringResource(id = R.string.first_name), // The label for the text field.
+                painterResource(id = R.drawable.user_icon), // The icon for the text field.
+                textValue = firstName, // The value of the text field.
+                onValueChange = {firstName = it}, // Updates the first name state when the value changes.
 
             )
 
-            MyTextField(
-                labelValue = stringResource(id = R.string.last_name),
-                painterResource(id = R.drawable.user_icon),
-                textValue = lastName,
-                onValueChange = {lastName = it}
+            MyTextField( // A custom text field for the last name input.
+                labelValue = stringResource(id = R.string.last_name), // The label for the text field.
+                painterResource(id = R.drawable.user_icon), // The icon for the text field.
+                textValue = lastName, // The value of the text field.
+                onValueChange = {lastName = it} // Updates the last name state when the value changes.
             )
 
-            MyTextField(
-                labelValue = stringResource(id =R.string.email),
-                painterResource(id = R.drawable.email_symbol),
-                textValue = email,
-                onValueChange = {email = it}
+            MyTextField( // A custom text field for the email input.
+                labelValue = stringResource(id = R.string.email), // The label for the text field.
+                painterResource(id = R.drawable.email_symbol), // The icon for the text field.
+                textValue = email, // The value of the text field.
+                onValueChange = {email = it} // Updates the email state when the value changes.
             )
 
-            PasswordTextFieldComponent(
-                labelValue = stringResource(id =R.string.password),
-                painterResource(id = R.drawable.lock_icon),
-                password = password,
-                onPasswordChange = {password = it}
+            PasswordTextFieldComponent( // A custom text field for the password input.
+                labelValue = stringResource(id = R.string.password), // The label for the text field.
+                painterResource(id = R.drawable.lock_icon), // The icon for the text field.
+                password = password, // The value of the text field.
+                onPasswordChange = {password = it} // Updates the password state when the value changes.
             )
 
-            MyTextField(
-                labelValue = stringResource(id = R.string.security_question),
-                painterResource(id = R.drawable.security_symbol),
-                textValue = securityAnswer,
-                onValueChange = {securityAnswer = it},
+            MyTextField( // A custom text field for the security question input.
+                labelValue = stringResource(id = R.string.security_question), // The label for the text field.
+                painterResource(id = R.drawable.security_symbol), // The icon for the text field.
+                textValue = securityAnswer, // The value of the text field.
+                onValueChange = {securityAnswer = it}, // Updates the security answer state when the value changes.
             )
 
 
-            Button(
-                onClick = {
-                when {
-                    !isValidEmail(email) -> {
-                        Toast.makeText(context, "Email is invalid", Toast.LENGTH_SHORT).show()
+            Button( // A button for signing up.
+                onClick = { // The action to perform when the button is clicked.
+                when { // A when statement to validate the input fields.
+                    !isValidEmail(email) -> { // If the email is invalid.
+                        Toast.makeText(context, "Email is invalid", Toast.LENGTH_SHORT).show() // Show an error message.
                     }
-                    password.isBlank() -> {
-                        Toast.makeText(context, "Password cannot be empty", Toast.LENGTH_SHORT).show()
+                    password.isBlank() -> { // If the password is blank.
+                        Toast.makeText(context, "Password cannot be empty", Toast.LENGTH_SHORT).show() // Show an error message.
                     }
-                    securityAnswer.isBlank() -> {
-                        Toast.makeText(context, "Security Question response cannot be empty", Toast.LENGTH_SHORT).show()
+                    securityAnswer.isBlank() -> { // If the security answer is blank.
+                        Toast.makeText(context, "Security Question response cannot be empty", Toast.LENGTH_SHORT).show() // Show an error message.
                     }
-                    else -> {
-                        Log.d(
+                    else -> { // If all input fields are valid.
+                        Log.d( // Logs the user's input.
                             "Sign Up Screen",
                             "FirstName: $firstName, LastName: $lastName, Email: $email, Password: $password"
                         )
                         //inserting new user to Database
-                        val newUser = User(
+                        val newUser = User( // Creates a new User object.
                             0,
                             firstName = firstName,
                             lastName = lastName,
@@ -150,12 +151,12 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                             securityAnswer = securityAnswer
                         )
 
-                        userViewModel.signUpUser(newUser) { success ->
-                            if (success) {
-                                Toast.makeText(context, "Sign Up Successful!", Toast.LENGTH_SHORT)
+                        userViewModel.signUpUser(newUser) { success -> // Calls the signUpUser function in the ViewModel.
+                            if (success) { // If the sign up was successful.
+                                Toast.makeText(context, "Sign Up Successful!", Toast.LENGTH_SHORT) // Show a success message.
                                     .show()
-                            } else {
-                                Toast.makeText(
+                            } else { // If the sign up failed.
+                                Toast.makeText( // Show an error message.
                                     context,
                                     "Email is already taken!",
                                     Toast.LENGTH_SHORT
@@ -170,49 +171,49 @@ fun SignUpScreen(onViewTerms: () -> Unit,
             }, modifier = Modifier
                 .fillMaxWidth()      // full width
                 .height(50.dp),      // large height
-                shape = RectangleShape,
-                colors = ButtonDefaults.buttonColors(
+                shape = RectangleShape, // Sets the shape of the button.
+                colors = ButtonDefaults.buttonColors( // Sets the colors of the button.
                     containerColor = Color(0xFF00E0C7), // teal accent
                     contentColor = Color.Black          // text color
-                ), contentPadding = PaddingValues(vertical = 12.dp),
-                enabled = checked
+                ), contentPadding = PaddingValues(vertical = 12.dp), // Adds padding to the content of the button.
+                enabled = checked // The button is enabled only if the checkbox is checked.
             ){
-                    Text(text = "Sign Up", fontSize = 18.sp)
+                    Text(text = "Sign Up", fontSize = 18.sp) // The text to display on the button.
             }
 
-            Button(onClick = {
+            Button(onClick = { // A button to navigate to the Sign In screen.
                 // Check if the user is signed in
-                onViewSignIn()
+                onViewSignIn() // Calls the onViewSignIn callback.
             }, modifier = Modifier
                 .fillMaxWidth()      // full width
                 .height(50.dp),      // large height
-                shape = RectangleShape,
-                colors = ButtonDefaults.buttonColors(
+                shape = RectangleShape, // Sets the shape of the button.
+                colors = ButtonDefaults.buttonColors( // Sets the colors of the button.
                     containerColor = Color(0xFF00E0C7), // teal accent
                     contentColor = Color.Black          // text color
-                ), contentPadding = PaddingValues(vertical = 12.dp)
+                ), contentPadding = PaddingValues(vertical = 12.dp) // Adds padding to the content of the button.
             )
             {
-                Text(text = "Sign In", fontSize = 18.sp)
+                Text(text = "Sign In", fontSize = 18.sp) // The text to display on the button.
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+            Row( // A horizontally arranged layout for the checkbox and the terms and conditions text.
+                verticalAlignment = Alignment.CenterVertically, // Vertically centers the children.
+                modifier = Modifier.fillMaxWidth() // Fills the maximum available width.
             ) {
 
-                Checkbox(
-                    checked = checked,
-                    onCheckedChange = { checked = it }
+                Checkbox( // A checkbox for agreeing to the terms and conditions.
+                    checked = checked, // The current state of the checkbox.
+                    onCheckedChange = { checked = it } // Updates the state when the checkbox is checked or unchecked.
                 )
 
-                Text(
-                    text = "Accept Terms and Conditions",
+                Text( // The text for the terms and conditions.
+                    text = "Go to Terms and Conditions",
                     fontSize = 16.sp,
                     color = Color(0xFF00E0C7),
-                    textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable {
-                        onViewTerms()
+                    textDecoration = TextDecoration.Underline, // Underlines the text.
+                    modifier = Modifier.clickable { // Makes the text clickable.
+                        onViewTerms() // Calls the onViewTerms callback when the text is clicked.
                     }
                 )
             }

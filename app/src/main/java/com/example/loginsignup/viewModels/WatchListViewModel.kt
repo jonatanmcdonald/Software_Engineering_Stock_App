@@ -28,70 +28,71 @@ import com.example.loginsignup.screens.UiMedia
 private const val CALLS_PER_MINUTE = 60              // your real limit
 private const val GAP_MS = 60_000L / CALLS_PER_MINUTE
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+// This class is the ViewModel for the Watchlist screen.
 class WatchListViewModel(application: Application) : AndroidViewModel(application) {
-    private val limiter = (application as App).rateLimiter
-    private var priceJob: Job? = null
-    private val debounceDuration = 500L
-    private val notificationService = PriceNotificationService(application)
+    private val limiter = (application as App).rateLimiter // The rate limiter for API calls.
+    private var priceJob: Job? = null // The job for fetching prices.
+    private val debounceDuration = 500L // The duration for debouncing search queries.
+    private val notificationService = PriceNotificationService(application) // The service for sending notifications.
 
-    private val ignoreNextSearch = MutableStateFlow(false)
+    private val ignoreNextSearch = MutableStateFlow(false) // A flag to ignore the next search query.
 
     // --- Search state exposed to UI ---
-    private val _stockList = MutableStateFlow<List<Stock>>(emptyList())
-    val stockList: StateFlow<List<Stock>> = _stockList.asStateFlow()
+    private val _stockList = MutableStateFlow<List<Stock>>(emptyList()) // A private mutable state flow to hold the list of stocks.
+    val stockList: StateFlow<List<Stock>> = _stockList.asStateFlow() // A public state flow to expose the list of stocks.
 
     // The chosen stock from the search results (for add/edit actions)
     private val _selectedStock = MutableStateFlow<Stock?>(null)
 
 
-    private val _watchRows = MutableStateFlow<List<WatchUi>>(emptyList())
-    val watchRows: StateFlow<List<WatchUi>> = _watchRows.asStateFlow()
+    private val _watchRows = MutableStateFlow<List<WatchUi>>(emptyList()) // A private mutable state flow to hold the list of watchlist rows.
+    val watchRows: StateFlow<List<WatchUi>> = _watchRows.asStateFlow() // A public state flow to expose the list of watchlist rows.
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val repository: StockAppRepository
-
-    init {
-        val db = StockAppDatabase.getDatabase(application)
-        val userDao = db.userDao()
-        val watchListDao = db.watchListDao()
-        val stockDao = db.stockDao()
-        val transactionDao = db.transactionDao()
-        val portfolioDao = db.portfolioDao()
-        val alertDao = db.alertDao()
-        val noteDao = db.noteDao()
+    private val _searchQuery = MutableStateFlow("") // A private mutable state flow to hold the search query.
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow() // A public state flow to expose the search query.
 
 
-        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao)
+    private val _isLoading = MutableStateFlow(false) // A private mutable state flow to track the loading state.
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow() // A public state flow to expose the loading state.
+
+    private val repository: StockAppRepository // The repository for accessing data.
+
+    init { // The initializer block for the ViewModel.
+        val db = StockAppDatabase.getDatabase(application) // Gets the database instance.
+        val userDao = db.userDao() // Gets the user DAO.
+        val watchListDao = db.watchListDao() // Gets the watchlist DAO.
+        val stockDao = db.stockDao() // Gets the stock DAO.
+        val transactionDao = db.transactionDao() // Gets the transaction DAO.
+        val portfolioDao = db.portfolioDao() // Gets the portfolio DAO.
+        val alertDao = db.alertDao() // Gets the alert DAO.
+        val noteDao = db.noteDao() // Gets the note DAO.
+
+
+        repository = StockAppRepository(userDao, watchListDao, stockDao, transactionDao, portfolioDao, alertDao, noteDao) // Creates the repository.
 
         // Search pipeline (single source of truth = `searchQuery`)
-        viewModelScope.launch {
-            combine(searchQuery, ignoreNextSearch) { q, ignore -> q to ignore }
-                .debounce(debounceDuration)
-                .map { (q, ignore) -> (q.trim() to ignore) }
-                .distinctUntilChanged { old, new -> old.first == new.first } // only care if text changed
-                .transformLatest { (q, ignore) ->
-                    if (ignore) {
+        viewModelScope.launch { // Launches a new coroutine in the ViewModel scope.
+            combine(searchQuery, ignoreNextSearch) { q, ignore -> q to ignore } // Combines the search query and the ignore flag.
+                .debounce(debounceDuration) // Debounces the search query.
+                .map { (q, ignore) -> (q.trim() to ignore) } // Trims the search query.
+                .distinctUntilChanged { old, new -> old.first == new.first } // Only proceeds if the search query has changed.
+                .transformLatest { (q, ignore) -> // Transforms the flow to get the latest search results.
+                    if (ignore) { // If the ignore flag is set.
                         // consume exactly this emission (the programmatic set), then clear the flag
                         ignoreNextSearch.value = false
                         return@transformLatest
                     }
-                    if (q.isBlank() || q.length < 2) {
+                    if (q.isBlank() || q.length < 2) { // If the search query is blank or too short.
                         emit(emptyList<Stock>())
                     } else {
                         // If repository.searchStocks returns LiveData:
-                        emitAll(repository.searchStocks(q).asFlow())
+                        emitAll(repository.searchStocks(q).asFlow()) // Converts the LiveData to a flow.
                         // If Flow: emitAll(repository.searchStocks(q))
                     }
                 }
-                .catch { _stockList.value = emptyList() }
-                .onEach { results -> _stockList.value = results }
-                .launchIn(this)
+                .catch { _stockList.value = emptyList() } // Catches any exceptions and sets the stock list to empty.
+                .onEach { results -> _stockList.value = results } // Sets the stock list to the search results.
+                .launchIn(this) // Launches the flow in the ViewModel scope.
         }
 
         //if (first) {
@@ -101,6 +102,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
 
+    // This function reconciles the current watchlist with the one from the database.
     private fun reconcileWithWatchlist(watchlist: List<WatchListWithSymbol>) {
         _watchRows.update { current ->
             val existingById = current.associateBy { it.id }
@@ -135,14 +137,15 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /** Call this once when the screen opens (pass the signed-in user's id). */
+    // This function starts the live update of the watchlist prices.
     fun startWatchlistPriceUpdate(userId: Int) {
-        priceJob?.cancel()
-        priceJob = viewModelScope.launch {
+        priceJob?.cancel() // Cancels the previous price job.
+        priceJob = viewModelScope.launch { // Launches a new coroutine in the ViewModel scope.
             // 1) Keep a live, mutable snapshot of the current watchlist for rotation
             var rotation: List<WatchListWithSymbol> = emptyList()
 
             // 2) Listen to watchlist changes and reconcile UI labels immediately
-            val watchlistCollector = launch {
+            val watchlistCollector = launch { // Launches a new coroutine to collect watchlist changes.
                 repository.observeAllForUsers(userId)
                     .distinctUntilChanged() // avoid noisy re-emits
                     .collectLatest { list ->
@@ -154,9 +157,9 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
             // 3) Continuous drip loop: one API call every GAP_MS, cycling through rotation
             val existingIndex = AtomicInteger(0)
             val index = existingIndex // (or keep a local var if you prefer)
-            while (isActive) {
+            while (isActive) { // Loops while the coroutine is active.
                 val snapshot = rotation // read current list
-                if (snapshot.isNotEmpty()) {
+                if (snapshot.isNotEmpty()) { // If the snapshot is not empty.
                     val i = index.getAndIncrement()
                     val target = snapshot[i % snapshot.size]
 
@@ -168,14 +171,15 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
                         Log.w("WatchListVM", "fetch failed for ${target.ticker}: ${t.message}")
                     }
                 }
-                delay(GAP_MS)
+                delay(GAP_MS) // Delays for the specified gap time.
             }
             // cancel child collector if loop exits
-            watchlistCollector.cancel()
+            watchlistCollector.cancel() // Cancels the watchlist collector.
         }
     }
 
     /** Upsert a single row atomically, preserving watchlist order. */
+    // This function merges a single row into the watchlist rows.
     private fun mergeRow(row: WatchUi) {
         _watchRows.update { current ->
             val byId = current.associateBy { it.id }.toMutableMap()
@@ -185,11 +189,12 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
 
+    // This function updates a single row in the watchlist.
     private suspend fun updateOneRow(w: WatchListWithSymbol): WatchUi {
         val existing = _watchRows.value.find { it.id == w.id }
         return try {
 
-           val resp = limiter.run{repository.fetchPrice(w.ticker ?: "")}
+           val resp = limiter.run{repository.fetchPrice(w.ticker ?: "")} // Fetches the price.
             val latestPx: Double = resp.price
             val change: Double? = resp.change
             val changePc: Double? = resp.percentChange
@@ -204,7 +209,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
 
-            WatchUi(
+            WatchUi( // Creates a new WatchUi object.
                 id = w.id,
                 name = w.name ?: "",
                 ticker = w.ticker ?: "",
@@ -241,6 +246,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // This function checks if an alert condition has been met.
     private fun checkAlertCondition(
         alert: Alert,
         latestPx: Double
@@ -269,6 +275,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         return isTriggered
     }
 
+    // This function is called when the search query is changed.
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
         _selectedStock.value = null
@@ -277,6 +284,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
     // --- Watchlist operations ---
     enum class UpsertResult { Inserted, Updated, AlreadyExists }
 
+    // This function upserts a watchlist item.
     suspend fun upsertByUserAndStock(item: WatchList): UpsertResult {
         val updated = repository.updateWatchListItem(item)
         if (updated > 0) return UpsertResult.Updated
@@ -284,15 +292,18 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         return if (rowId != -1L) UpsertResult.Inserted else UpsertResult.AlreadyExists
     }
 
+    // This function retrieves the ID of a stock by its symbol.
     suspend fun getStockId(symbol: String): Long =
         repository.getStockId(symbol)
 
+    // This function deletes a watchlist item.
     fun delete(itemId: Long) = viewModelScope.launch {
         // instantly remove from UI
         _watchRows.update { it.filterNot { row -> row.id == itemId } }
         repository.deleteWatchListItem(itemId)
     }
 
+    // This function is called when a stock is selected.
     fun onStockSelected(stock: Stock) {
         _selectedStock.value = stock
         ignoreNextSearch.value = true
@@ -301,6 +312,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         _stockList.value = emptyList()
     }
 
+    // This function saves a note with its associated media.
     fun saveNoteWithMedia(
         existingNoteId: Long?,
         watchlistId: Long,
@@ -319,6 +331,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // This function upserts an alert.
     suspend fun upsertAlert(alert: Alert): UpsertResult{
         val updated = repository.updateAlert(alert)
         if (updated > 0) return UpsertResult.Updated
@@ -326,6 +339,7 @@ class WatchListViewModel(application: Application) : AndroidViewModel(applicatio
         return if (rowId != -1L) UpsertResult.Inserted else UpsertResult.AlreadyExists
     }
 
+    // This function toggles the active state of an alert.
     suspend fun toggleAlertActive(parent: String, userId: Int, symbol: String, isActive: Boolean)
     {
         repository.toggleAlertActive(parent, userId,  symbol,isActive)

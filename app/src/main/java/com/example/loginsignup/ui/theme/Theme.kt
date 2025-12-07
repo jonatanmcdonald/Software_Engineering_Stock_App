@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.material3.*
 import androidx.compose.ui.graphics.Color
 
+// This file defines the theme for the application.
+
 val DarkModernBackground = Color(0xFF0F1115)   // main background
 val DarkModernSurface = Color(0xFF1A1D23)      // cards, text fields
 val DarkModernBorder = Color(0xFF2B2F36)       // outlines / dividers
@@ -18,8 +20,8 @@ val DarkModernHint = Color(0xFF9CA3AF)         // secondary / hint text
 val DarkModernAccent = Color(0xFF00E0C7)       // teal accent (buttons)
 val DarkModernError = Color(0xFFFF4D4F)        // error red
 
-private val AppTypography = Typography()
-private val DarkModernColorScheme = darkColorScheme(
+private val AppTypography = Typography() // The typography for the application.
+private val DarkModernColorScheme = darkColorScheme( // The color scheme for the application.
     primary = DarkModernAccent,
     onPrimary = Color.Black,
     secondary = DarkModernAccent,
@@ -32,6 +34,7 @@ private val DarkModernColorScheme = darkColorScheme(
     onError = Color.White
 )
 
+// This composable function applies the theme to the application.
 @Composable
 fun MyAppTheme(content: @Composable () -> Unit) {
     MaterialTheme(

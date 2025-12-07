@@ -54,36 +54,36 @@ data class LivePortfolio(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PortfolioScreen(
-    userId: Int,
-    pvm: PortfolioViewModel = viewModel(),
-    onNavigateToSearch: () -> Unit
+    userId: Int, // The ID of the current user.
+    pvm: PortfolioViewModel = viewModel(), // Injects the PortfolioViewModel.
+    onNavigateToSearch: () -> Unit // Callback function to navigate to the search screen.
 ) {
-    // start live updates for this user
+    // This effect runs when the user ID changes.
     LaunchedEffect(userId) {
         pvm.startPortfolioValueUpdate(userId)
         pvm.loadGainsLosses(userId)
     }
 
-    val rows by pvm.portfolioRows.collectAsState(emptyList())
-    val isLoading by pvm.isLoading.collectAsState()
+    val rows by pvm.portfolioRows.collectAsState(emptyList()) // Collects the portfolio rows from the ViewModel as state.
+    val isLoading by pvm.isLoading.collectAsState() // Collects the loading state from the ViewModel.
 
     // aggregate summary
-    val totalValue = remember(rows) { rows.sumOf { it.marketValue ?: 0.0 } }
-    val totalUnreal = remember(rows) { rows.sumOf { it.unrealizedPnl ?: 0.0 } }
-    val totalRealized = remember(rows) { rows.sumOf { it.realizedPnl } }
-    val totalPnl = totalRealized + totalUnreal
-    val dayPnl = remember(rows) { rows.sumOf { it.dayChange ?: 0.0 } }
+    val totalValue = remember(rows) { rows.sumOf { it.marketValue ?: 0.0 } } // Calculates the total market value of the portfolio.
+    val totalUnreal = remember(rows) { rows.sumOf { it.unrealizedPnl ?: 0.0 } } // Calculates the total unrealized profit and loss.
+    val totalRealized = remember(rows) { rows.sumOf { it.realizedPnl } } // Calculates the total realized profit and loss.
+    val totalPnl = totalRealized + totalUnreal // Calculates the total profit and loss.
+    val dayPnl = remember(rows) { rows.sumOf { it.dayChange ?: 0.0 } } // Calculates the total day's profit and loss.
     val scope = rememberCoroutineScope()
-    var selectedStock by remember { mutableStateOf<LivePortfolio?>(null)}
+    var selectedStock by remember { mutableStateOf<LivePortfolio?>(null)} // State for the currently selected stock.
 
-    val gains by pvm.gainsLosses.collectAsState(emptyList())
+    val gains by pvm.gainsLosses.collectAsState(emptyList()) // Collects the gains and losses from the ViewModel as state.
 
-    var showGainsDialog by remember { mutableStateOf(false) }
+    var showGainsDialog by remember { mutableStateOf(false) } // State to manage the visibility of the gains/losses dialog.
 
-    Scaffold(
+    Scaffold( // A basic Material Design layout structure.
         contentWindowInsets = WindowInsets(0),
         modifier = Modifier.fillMaxSize(),
-        topBar = {
+        topBar = { // The top app bar of the screen.
             CenterAlignedTopAppBar(
                 modifier = Modifier.height(100.dp),
                 windowInsets = WindowInsets(0),
@@ -93,7 +93,7 @@ fun PortfolioScreen(
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
                 ),
-                title = {
+                title = { // The title of the app bar.
                     Box(
                         Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -103,14 +103,14 @@ fun PortfolioScreen(
                 }
             )
         },
-        floatingActionButton = {
+        floatingActionButton = { // The floating action button of the screen.
             Box(
                 Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
                 // Left FAB
-                FloatingActionButton(
+                FloatingActionButton( // A floating action button to navigate to the search screen.
                     onClick = onNavigateToSearch,
                     containerColor = Color(0xFF2563EB),
                     contentColor = Color.White,
@@ -122,7 +122,7 @@ fun PortfolioScreen(
                 }
 
                 // Right FAB
-                FloatingActionButton(
+                FloatingActionButton( // A floating action button to show the gains/losses dialog.
                     onClick = { showGainsDialog = true },
                     containerColor = Color(0xFF16A34A),
                     contentColor = Color.White,
@@ -134,7 +134,7 @@ fun PortfolioScreen(
                 }
             }
         }
-    ) { inner ->
+    ) { inner -> // The content of the screen.
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -142,38 +142,38 @@ fun PortfolioScreen(
                 .background(Color(0xFF0B0E13))
         ) {
             // Summary header
-            SummaryStrip(
+            SummaryStrip( // A composable to display the summary of the portfolio.
                 totalValue = totalValue,
                 totalPnl = totalPnl,
                 dayPnl = dayPnl
             )
 
-            if (rows.isEmpty()) {
+            if (rows.isEmpty()) { // If there are no rows in the portfolio.
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        if (isLoading) "Loading…" else "No positions yet.\nTap + to add your first stock",
+                        if (isLoading) "Loading…" else "No positions yet.\nTap + to add your first stock", // Displays a message to the user.
                         style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFFE5E7EB),
                         textAlign = TextAlign.Center
                     )
                 }
-            } else {
-                LazyColumn(
+            } else { // If there are rows in the portfolio.
+                LazyColumn( // A vertically scrolling list that only composes and lays out the currently visible items.
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(rows, key = { it.id }) { item ->
-                        PortfolioCard(
+                    items(rows, key = { it.id }) { item -> // Defines the items in the list.
+                        PortfolioCard( // A card for each portfolio item.
                             item,
                             item.hasAlert,
                             item.alertParameter,
                             item.alertPrice,
                             item.alertActive,
-                            onUpsertAlert = { parameter, price, active ->
+                            onUpsertAlert = { parameter, price, active -> // Callback function to upsert an alert.
                                scope.launch {
                                    pvm.upsertAlert(
                                        Alert(
@@ -187,25 +187,25 @@ fun PortfolioScreen(
                                    )
                                }
                             },
-                            onToggleAlertActive = { isActive ->
+                            onToggleAlertActive = { isActive -> // Callback function to toggle the active state of an alert.
                                 scope.launch {
                                     pvm.toggleAlertActive("Portfolio", userId, item.ticker, isActive)
                                 }
                             }
 
 
-                        ) { clickedRow ->
+                        ) { clickedRow -> // Callback function for when a row is clicked.
                             selectedStock = clickedRow
 
                         }
                     }
                 }
 
-                if (selectedStock != null) {
-                    SellStockDialog(
+                if (selectedStock != null) { // If a stock is selected.
+                    SellStockDialog( // A dialog to sell the selected stock.
                         stock = selectedStock!!,
-                        onDismiss = {selectedStock = null},
-                        onConfirm = { qty ->
+                        onDismiss = {selectedStock = null}, // Callback function to dismiss the dialog.
+                        onConfirm = { qty -> // Callback function to confirm the sale of the stock.
                             val pricePerShare = selectedStock!!.last!!
                             val transaction = Transaction(
                                 qty = qty.toInt(),
@@ -225,16 +225,16 @@ fun PortfolioScreen(
             }
         }
 
-        if (showGainsDialog) {
-            AlertDialog(
-                onDismissRequest = { showGainsDialog = false},
+        if (showGainsDialog) { // If the gains/losses dialog should be shown.
+            AlertDialog( // A dialog to display the gains and losses.
+                onDismissRequest = { showGainsDialog = false}, // Callback function to dismiss the dialog.
                 title = { Text("Gains/Losses") },
                 text = {
                     Column {
 
                         gains.forEach { entry ->
                             Text(
-                                "${entry.periodMonths} months:: $${"%.2f".format(entry.gainOrLoss)}",
+                                "${entry.periodMonths} months:: $${"%.2f".format(entry.gainOrLoss)}", // Displays the gain or loss for each period.
                                 color = if (entry.gainOrLoss >= 0) Color(0xFF16A34A) else Color(0xFFDC2626),
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(vertical = 2.dp)
@@ -242,7 +242,7 @@ fun PortfolioScreen(
                         }
                     }
                 },
-                confirmButton = {
+                confirmButton = { // The confirm button of the dialog.
                     Button(onClick = {showGainsDialog = false}) {
                         Text("Close")
                     }
@@ -255,7 +255,7 @@ fun PortfolioScreen(
 
 // ---------- Summary ----------
 @Composable
-private fun SummaryStrip(
+private fun SummaryStrip( // A composable to display the summary of the portfolio.
     totalValue: Double,
     totalPnl: Double,
     dayPnl: Double
@@ -288,7 +288,7 @@ private fun SummaryStrip(
 }
 
 @Composable
-private fun Stat(label: String, value: String, color: Color) {
+private fun Stat(label: String, value: String, color: Color) { // A composable to display a single statistic.
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, color = Color(0xFF9AA4B2), style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(4.dp))
@@ -299,7 +299,7 @@ private fun Stat(label: String, value: String, color: Color) {
 // ---------- Row Card ----------
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun PortfolioCard(
+private fun PortfolioCard( // A card for each portfolio item.
     row: LivePortfolio,
     hasAlert: Boolean = false,
     alertParameter: String = "",
@@ -321,7 +321,7 @@ private fun PortfolioCard(
 
     Log.d("PortfolioCard", "PortfolioCard: $pnl")
 
-    val color = when {
+    val color = when { // Determines the color of the profit and loss text.
         pnl == null -> Color(0xFF9AA4B2)         // no data / neutral
         pnl > 0.0   -> Color(0xFF16A34A)         // green for gain
         pnl < 0.0   -> Color(0xFFDC2626)         // red for loss
@@ -330,23 +330,23 @@ private fun PortfolioCard(
 
 
     // ===== ALERT STATE =====
-    var showAlertEditor by remember { mutableStateOf(false) }
-    var alertMenuExpanded by remember { mutableStateOf(false) }
+    var showAlertEditor by remember { mutableStateOf(false) } // State to manage the visibility of the alert editor.
+    var alertMenuExpanded by remember { mutableStateOf(false) } // State to manage the expansion of the alert menu.
 
-    var editableAlertParameter by remember(alertParameter) {
+    var editableAlertParameter by remember(alertParameter) { // State for the editable alert parameter.
         mutableStateOf(alertParameter.ifBlank { alertOptions.first() })
     }
-    var alertActiveParameter by remember(alertActive) {
+    var alertActiveParameter by remember(alertActive) { // State for the editable alert active parameter.
         mutableStateOf(alertActive)
     }
 
     // keep price as text while editing to avoid crashes on invalid input
-    var editableAlertValueText by remember(alertPrice) {
+    var editableAlertValueText by remember(alertPrice) { // State for the editable alert value text.
         mutableStateOf(
             if (alertPrice == 0.0) "" else alertPrice.toString()
         )
     }
-    var alertValueError by remember { mutableStateOf<String?>(null) }
+    var alertValueError by remember { mutableStateOf<String?>(null) } // State for the alert value error.
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF171A21)),
@@ -408,7 +408,7 @@ private fun PortfolioCard(
             // ===== ALERT DISPLAY / ADD / EDIT BUTTON =====
             Spacer(Modifier.height(8.dp))
             // ===== ALERT EDITOR =====
-            if (showAlertEditor) {
+            if (showAlertEditor) { // If the alert editor should be shown.
                 Spacer(Modifier.height(8.dp))
 
                 Text(
@@ -511,7 +511,7 @@ private fun PortfolioCard(
 
             Spacer(Modifier.height(10.dp))
 
-            if (!hasAlert && !showAlertEditor) {
+            if (!hasAlert && !showAlertEditor) { // If there is no alert and the editor is not shown.
                 Text(
                     text = "No alert yet",
                     style = MaterialTheme.typography.bodyMedium,
@@ -522,7 +522,7 @@ private fun PortfolioCard(
                     Text("Add Alert", color = Color(0xFFB3C5FF))
 
                 }
-            } else if (hasAlert && !showAlertEditor) {
+            } else if (hasAlert && !showAlertEditor) { // If there is an alert and the editor is not shown.
                 Text(
                     text = "Alert",
                     style = MaterialTheme.typography.bodyMedium,
@@ -572,7 +572,7 @@ private fun PortfolioCard(
 }
 
 @Composable
-private fun LabeledValue(label: String, value: String, valueColor: Color) {
+private fun LabeledValue(label: String, value: String, valueColor: Color) { // A composable to display a labeled value.
     Column {
         Text(label, color = Color(0xFF9AA4B2), style = MaterialTheme.typography.labelSmall)
         Spacer(Modifier.height(4.dp))
@@ -581,12 +581,12 @@ private fun LabeledValue(label: String, value: String, valueColor: Color) {
 }
 
 @Composable
-fun SellStockDialog(
+fun SellStockDialog( // A dialog to sell a stock.
     stock: LivePortfolio,
     onDismiss: () -> Unit,
     onConfirm: (quantity: Double) -> Unit
 ) {
-    var qtyToSell by remember { mutableStateOf("") }
+    var qtyToSell by remember { mutableStateOf("") } // State for the quantity to sell.
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -602,9 +602,9 @@ fun SellStockDialog(
                 )
             }
         },
-        confirmButton = {
+        confirmButton = { // The confirm button of the dialog.
             Button(
-                onClick = {
+                onClick = { // The action to perform when the button is clicked.
                     val qty = qtyToSell.toDoubleOrNull()
                     if (qty != null && qty > 0 && qty <= stock.qty) {
                         onConfirm(qty)
@@ -613,16 +613,16 @@ fun SellStockDialog(
                 }
             ) { Text("Sell") }
         },
-        dismissButton = {
+        dismissButton = { // The dismiss button of the dialog.
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }
 
 // ---------- Formatters ----------
-private fun money(v: Double): String = String.format(Locale.US, "$%.2f", v)
-private fun pct(p: Double): String {
+private fun money(v: Double): String = String.format(Locale.US, "$%.2f", v) // Formats a double as a money string.
+private fun pct(p: Double): String { // Formats a double as a percentage string.
     val value = if (p.absoluteValue <= 1.0) p * 100.0 else p
     return String.format(Locale.US, "%.2f%%", value)
 }
-private fun fmtQty(q: Double): String = if (q % 1.0 == 0.0) q.toInt().toString() else String.format(Locale.US, "%.3f", q)
+private fun fmtQty(q: Double): String = if (q % 1.0 == 0.0) q.toInt().toString() else String.format(Locale.US, "%.3f", q) // Formats a double as a quantity string.

@@ -10,28 +10,30 @@ import android.os.Build
 
 import com.example.loginsignup.utils.GlobalRateLimiter
 
+// This class is the main application class.
 class App : Application() {
-    lateinit var rateLimiter: GlobalRateLimiter
+    lateinit var rateLimiter: GlobalRateLimiter // The global rate limiter for API calls.
         private set
 
-    override fun onCreate() {
+    override fun onCreate() { // This function is called when the application is created.
         super.onCreate()
-        createNotificationChannel()
-        rateLimiter = GlobalRateLimiter(maxPerMinute = 60) // your real API cap
+        createNotificationChannel() // Creates the notification channel for price notifications.
+        rateLimiter = GlobalRateLimiter(maxPerMinute = 60) // Initializes the rate limiter.
     }
 
 
+    // This function creates the notification channel for price notifications.
     private fun createNotificationChannel() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            val channel = NotificationChannel(
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){ // Checks if the Android version is Oreo or higher.
+            val channel = NotificationChannel( // Creates a new notification channel.
                 PriceNotificationService.PRICE_CHANNEL_ID,
                 "Price",
                 NotificationManager.IMPORTANCE_HIGH,
             )
             channel.description = "Used for watchlist price notifications"
 
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager // Gets the notification manager.
+            notificationManager.createNotificationChannel(channel) // Creates the notification channel.
 
         }
     }

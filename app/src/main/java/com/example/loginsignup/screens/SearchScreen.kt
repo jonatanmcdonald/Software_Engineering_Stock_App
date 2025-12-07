@@ -20,44 +20,45 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.loginsignup.viewModels.SearchViewModel
 
-private val MaxMenuHeight = 320.dp
+private val MaxMenuHeight = 320.dp // Defines the maximum height for the dropdown menu.
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
+@OptIn(ExperimentalMaterial3Api::class) // Opt-in for using experimental Material 3 APIs.
+@Composable // Marks this function as a composable, allowing it to be used in UI.
 fun SearchScreen(
-    svm: SearchViewModel = viewModel(),
-    onNavigateToDetails: (String) -> Unit,
-    onBack: () -> Unit
+    svm: SearchViewModel = viewModel(), // Injects the SearchViewModel.
+    onNavigateToDetails: (String) -> Unit, // Callback function to navigate to the details screen.
+    onBack: () -> Unit // Callback function to navigate back.
 ) {
-    val stockList by svm.stockList.collectAsState()
-    val isLoading by svm.isLoading.collectAsState()
-    val searchQuery by svm.searchQuery.collectAsState()
+    val stockList by svm.stockList.collectAsState() // Collects the list of stocks from the ViewModel as state.
+    val isLoading by svm.isLoading.collectAsState() // Collects the loading state from the ViewModel.
+    val searchQuery by svm.searchQuery.collectAsState() // Collects the search query from the ViewModel.
 
-    var expanded by remember { mutableStateOf(false) }
-    var hasFocus by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) } // State to manage the expansion of the dropdown menu.
+    var hasFocus by remember { mutableStateOf(false) } // State to track if the search field has focus.
 
-    // Open/close menu based on focus + results
+    // This effect runs when stockList or hasFocus changes.
+    // It controls the visibility of the dropdown menu.
     LaunchedEffect(stockList, hasFocus) {
         expanded = hasFocus && stockList.isNotEmpty()
     }
 
-    Column {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { wantOpen ->
-                // Only allow opening if we have results
+    Column { // A vertical layout for the screen content.
+        ExposedDropdownMenuBox( // A box that provides a dropdown menu.
+            expanded = expanded, // Controls whether the menu is expanded.
+            onExpandedChange = { wantOpen -> // Callback for when the expansion state changes.
+                // Only allow opening the menu if there are results and the field has focus.
                 expanded = wantOpen &&  hasFocus && stockList.isNotEmpty()
             }
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { svm.onSearchQueryChanged(it) }, // VM drives search
-                label = { Text("Search symbol or name") },
-                singleLine = true,
-                trailingIcon = {
-                    if (isLoading) {
+            OutlinedTextField( // A text field with an outline.
+                value = searchQuery, // The current value of the search query.
+                onValueChange = { svm.onSearchQueryChanged(it) }, // Callback when the search query changes.
+                label = { Text("Search symbol or name") }, // The label for the text field.
+                singleLine = true, // Restricts the input to a single line.
+                trailingIcon = { // An icon displayed at the end of the text field.
+                    if (isLoading) { // If data is loading, show a progress indicator.
                         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
+                    } else { // Otherwise, show a search icon.
                         Icon(
                             imageVector = Icons.Filled.Search,
                             contentDescription = "Search"
@@ -65,25 +66,25 @@ fun SearchScreen(
                     }
                 },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor() // IMPORTANT: inside the Box
-                    .onFocusChanged { hasFocus = it.isFocused }
+                    .fillMaxWidth() // Makes the text field fill the available width.
+                    .menuAnchor() // Anchors the dropdown menu to this text field.
+                    .onFocusChanged { hasFocus = it.isFocused } // Updates the focus state.
             )
 
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
+            ExposedDropdownMenu( // The dropdown menu itself.
+                expanded = expanded, // Controls whether the menu is visible.
+                onDismissRequest = { expanded = false }, // Callback when the menu is dismissed.
                 modifier = Modifier
-                    .exposedDropdownSize(matchTextFieldWidth = true)
-                    .heightIn(max = MaxMenuHeight)
+                    .exposedDropdownSize(matchTextFieldWidth = true) // Matches the width of the menu to the text field.
+                    .heightIn(max = MaxMenuHeight) // Constrains the height of the menu.
             ) {
-                stockList.forEach { stock ->
-                    DropdownMenuItem(
-                        text = { Text("${stock.name} (${stock.ticker})") },
-                        onClick = {
-                            onNavigateToDetails(stock.ticker)
-                            svm.onStockSelected(stock) // sets text; VM can suppress extra search
-                            expanded = false
+                stockList.forEach { stock -> // Iterates over the list of stocks.
+                    DropdownMenuItem( // An item in the dropdown menu.
+                        text = { Text("${stock.name} (${stock.ticker})") }, // The text to display for the stock.
+                        onClick = { // Callback when the item is clicked.
+                            onNavigateToDetails(stock.ticker) // Navigates to the details screen for the selected stock.
+                            svm.onStockSelected(stock) // Notifies the ViewModel that a stock has been selected.
+                            expanded = false // Closes the dropdown menu.
                         }
                     )
                 }

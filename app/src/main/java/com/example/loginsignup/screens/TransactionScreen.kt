@@ -31,21 +31,21 @@ import java.util.Locale
 
 @Composable
 fun TransactionScreen(
-    userId: Int,
-    pvm: PortfolioViewModel = viewModel()
+    userId: Int, // The ID of the current user.
+    pvm: PortfolioViewModel = viewModel() // Injects the PortfolioViewModel.
 ) {
-    val transactions by pvm.getTransForUser(userId).collectAsState(initial = emptyList())
+    val transactions by pvm.getTransForUser(userId).collectAsState(initial = emptyList()) // Collects the list of transactions for the user as state.
 
     //Search Query State
-    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var searchQuery by rememberSaveable { mutableStateOf("") } // State for the search query.
 
-    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) } // Remembers a date formatter.
 
-    val filteredTransactions = remember(transactions, searchQuery)
+    val filteredTransactions = remember(transactions, searchQuery) // Remembers the list of filtered transactions.
     {
-        if (searchQuery.isBlank()) {
+        if (searchQuery.isBlank()) { // If the search query is blank, return all transactions.
             transactions
-        } else {
+        } else { // Otherwise, filter the transactions based on the search query.
             val q = searchQuery.trim().lowercase()
             transactions.filter { tx ->
                 val symbolMatch = tx.symbol.lowercase().contains(q)
@@ -60,19 +60,19 @@ fun TransactionScreen(
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
+            .fillMaxSize() // Fills the maximum available size.
+            .background(MaterialTheme.colorScheme.background) // Sets the background color.
+            .padding(16.dp) // Adds padding.
     ) {
         // Header
         Text(
-            text = "Transaction History",
+            text = "Transaction History", // The title of the screen.
             fontSize = 24.sp,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
         //Search Field
-        TextField(
+        TextField( // A text field for searching transactions.
             value = searchQuery,
             onValueChange = { searchQuery = it },
             singleLine = true,
@@ -83,26 +83,26 @@ fun TransactionScreen(
         )
 
         // Scrollable list container (empty for now)
-        LazyColumn(
+        LazyColumn( // A vertically scrolling list that only composes and lays out the currently visible items.
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize()
         ) {
             // Placeholder: empty items to show the layout
-            items(filteredTransactions) { tx ->
-                Surface(
+            items(filteredTransactions) { tx -> // Defines the items in the list.
+                Surface( // A basic Material Design surface.
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(vertical = 4.dp),
-                    color = if (tx.side == "SELL") Color(0xFFEF5350) else Color(0xFF66BB6A),
+                    color = if (tx.side == "SELL") Color(0xFFEF5350) else Color(0xFF66BB6A), // Sets the color of the surface based on the transaction side.
                     shadowElevation = 2.dp,
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) { // A column to display the transaction details.
 
                         val dateString = dateFormatter.format(tx.timestamp)
-                        Text(text = "Date: $dateString", fontSize = 12.sp)
-                        Text("Symbol: ${tx.symbol} | Side : ${tx.side}", fontSize = 16.sp)
-                        Text("Qty: ${tx.qty} | Price: $${"%.2f".format(tx.price)}", fontSize = 14.sp)
+                        Text(text = "Date: $dateString", fontSize = 12.sp) // Displays the date of the transaction.
+                        Text("Symbol: ${tx.symbol} | Side : ${tx.side}", fontSize = 16.sp) // Displays the symbol and side of the transaction.
+                        Text("Qty: ${tx.qty} | Price: $${"%.2f".format(tx.price)}", fontSize = 14.sp) // Displays the quantity and price of the transaction.
                     }
                 }
             }

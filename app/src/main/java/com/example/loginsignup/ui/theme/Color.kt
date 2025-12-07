@@ -3,6 +3,8 @@ package com.example.loginsignup.ui.theme
 import androidx.compose.ui.graphics.Color
 
 
+// This file defines the colors used in the application.
+
 val BluePrimary = Color(0xFF1565C0)     // Main brand color
 val BlueSecondary = Color(0xFF5E92F3)   // Accent or button color
 val Background = Color(0xFF0F1115)      // Screen background

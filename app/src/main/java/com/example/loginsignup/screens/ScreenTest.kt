@@ -1,5 +1,7 @@
-package com.example.loginsignup.screens
+// This file is entirely commented out and not currently in use.
 /*
+package com.example.loginsignup.screens
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

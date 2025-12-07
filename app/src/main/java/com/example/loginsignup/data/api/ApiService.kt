@@ -7,6 +7,7 @@ import com.example.loginsignup.data.models.newsResp
 import retrofit2.http.GET
 import retrofit2.http.Query
 
+// This interface defines the API endpoints for the application.
 interface ApiService {
 
     /*
@@ -28,23 +29,26 @@ interface ApiService {
     ): TickersResp
     */
 
+    // This function fetches the last quote for a given stock symbol.
     @GET("quote")
     suspend fun getLastQuote(
-        @Query("symbol") symbol: String,
-        @Query("token") token: String
+        @Query("symbol") symbol: String, // The stock symbol.
+        @Query("token") token: String // The API token.
     ): LastQuote
 
+    // This function fetches the latest news.
     @GET("news")
     suspend fun getNews(
-        @Query("category") category: String = "general",
-        @Query("token") token: String
+        @Query("category") category: String = "general", // The category of news to fetch.
+        @Query("token") token: String // The API token.
     ): List<NewsItem>
 
 
+    // This function fetches the profile for a given stock symbol.
     @GET("stock/profile2")
     suspend fun getProfile(
-        @Query("symbol") symbol: String,
-        @Query("token") token: String
+        @Query("symbol") symbol: String, // The stock symbol.
+        @Query("token") token: String // The API token.
     ): Profile
 
 }
