@@ -674,7 +674,11 @@ private fun WatchCard(
                     }
                 }
 
-
+            val conditionSymbols = mapOf(
+                "LESS_THAN" to "<",
+                "GREATER_THAN" to ">",
+                "EQUAL_TO" to "="
+            )
             // ===== ALERT DISPLAY / ADD / EDIT BUTTON =====
             // Add vertical spacing.
             Spacer(Modifier.height(8.dp))
@@ -701,7 +705,7 @@ private fun WatchCard(
                 ) {
                     // Text field that displays the selected condition.
                     OutlinedTextField(
-                        value = editableAlertParameter,
+                        value = conditionSymbols[editableAlertParameter] ?: editableAlertParameter,
                         onValueChange = { /* read-only, controlled by dropdown */ },
                         label = { Text("Condition") },
                         readOnly = true,
@@ -719,10 +723,11 @@ private fun WatchCard(
                         onDismissRequest = { alertMenuExpanded = false },
                         modifier = Modifier.exposedDropdownSize(matchTextFieldWidth = true)
                     ) {
+
                         // Create a menu item for each alert option.
                         alertOptions.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option) },
+                                text = { Text(conditionSymbols[option] ?: option) },
                                 onClick = {
                                     // Update the selected parameter and close the menu.
                                     editableAlertParameter = option
@@ -832,8 +837,9 @@ private fun WatchCard(
                         .background(Color(0xFF1F2430), shape = MaterialTheme.shapes.medium)
                         .padding(10.dp)
                 ) {
+                    val symbol = conditionSymbols[alertParameter] ?: alertParameter
                     Text(
-                        text = "Price $alertParameter $$alertPrice",
+                        text = "Price  $symbol  $$alertPrice",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color(0xFFB3C5FF)
                     )
