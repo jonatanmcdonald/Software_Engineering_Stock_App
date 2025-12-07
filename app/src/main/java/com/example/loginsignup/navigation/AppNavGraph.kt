@@ -118,7 +118,7 @@ fun AppNavHost() {
             // Define the composable for the Terms and Conditions screen.
             composable(AuthDest.TERMS) {
                 // The `onBack` callback pops the back stack to return to the previous screen.
-                TermsAndConditionsScreen(onBack = { navController.popBackStack() })
+                TermsAndConditionsScreen()
             }
 
             // ---- MAIN tabs ----
