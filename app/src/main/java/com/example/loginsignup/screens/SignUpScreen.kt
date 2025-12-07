@@ -207,7 +207,7 @@ fun SignUpScreen(onViewTerms: () -> Unit,
                 )
 
                 Text(
-                    text = "Go to Terms and Conditions",
+                    text = "Accept Terms and Conditions",
                     fontSize = 16.sp,
                     color = Color(0xFF00E0C7),
                     textDecoration = TextDecoration.Underline,
