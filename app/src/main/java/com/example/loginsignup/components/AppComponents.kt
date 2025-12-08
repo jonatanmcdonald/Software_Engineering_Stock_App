@@ -366,7 +366,9 @@ fun AddWatchlistItemDialog(
         }
     }
 
-    val canConfirm = searchQuery.isNotBlank() // Whether the confirm button should be enabled.
+    var stockSelected by remember { mutableStateOf(false) }
+
+    val canConfirm = searchQuery.isNotBlank() && stockSelected// Whether the confirm button should be enabled.
 
     AlertDialog(
         onDismissRequest = onDismissRequest, // A callback to be invoked when the dialog is dismissed.
@@ -416,6 +418,7 @@ fun AddWatchlistItemDialog(
                                 onClick = { // A callback to be invoked when the item is clicked.
                                     onStockSelected(stock) // Notifies that a stock has been selected.
                                     //onQueryChange(stock.ticker)
+                                    stockSelected = true
                                     expanded = false // Closes the dropdown menu.
                                 }
                             )
