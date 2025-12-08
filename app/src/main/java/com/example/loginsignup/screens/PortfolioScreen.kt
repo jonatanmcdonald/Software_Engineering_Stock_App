@@ -310,6 +310,13 @@ private fun PortfolioCard( // A card for each portfolio item.
     onClick: (LivePortfolio) -> Unit
 ) {
     val alertOptions = listOf("LESS_THAN", "GREATER_THAN", "EQUAL_TO")
+
+    val conditionSymbols = mapOf(
+        "LESS_THAN" to "<",
+        "GREATER_THAN" to ">",
+        "EQUAL_TO" to "="
+    )
+
     val isUp = row.unrealizedPnl?.let { it >= 0.0 }
     val priceColor = when (isUp) {
         true  -> Color(0xFF16A34A)
@@ -424,7 +431,7 @@ private fun PortfolioCard( // A card for each portfolio item.
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = editableAlertParameter,
+                        value =  conditionSymbols[editableAlertParameter] ?: editableAlertParameter,
                         onValueChange = { /* read-only, controlled by dropdown */ },
                         label = { Text("Condition") },
                         readOnly = true,

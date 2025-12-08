@@ -123,6 +123,7 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
                 onValueChange = {securityAnswer = it}, // Updates the security answer state when the value changes.
             )
 
+            Spacer(modifier = Modifier.height(20.dp)) // Adds vertical space.
 
             Button( // A button for signing up.
                 onClick = { // The action to perform when the button is clicked.
@@ -180,6 +181,8 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
             ){
                     Text(text = "Sign Up", fontSize = 18.sp) // The text to display on the button.
             }
+            Spacer(modifier = Modifier.height(20.dp)) // Adds vertical space.
+
 
             Button(onClick = { // A button to navigate to the Sign In screen.
                 // Check if the user is signed in
