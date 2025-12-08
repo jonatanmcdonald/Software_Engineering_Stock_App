@@ -83,7 +83,7 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
             NormalTextComponent(value = stringResource(id = R.string.hello)) // Displays a normal text component with the hello string.
             HeadingTextComponent(value = stringResource(id = R.string.create_account)) // Displays a heading text component with the create account string.
 
-            Spacer(modifier = Modifier.height(2.dp)) // Adds vertical space.
+            Spacer(modifier = Modifier.height(12.dp)) // Adds vertical space.
 
 
             MyTextField( // A custom text field for the first name input.
@@ -94,6 +94,7 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
                 onValueChange = {firstName = it}, // Updates the first name state when the value changes.
 
             )
+            Spacer(modifier = Modifier.height(12.dp)) // Adds vertical space.
 
             MyTextField( // A custom text field for the last name input.
                 labelValue = stringResource(id = R.string.last_name), // The label for the text field.
@@ -101,6 +102,7 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
                 textValue = lastName, // The value of the text field.
                 onValueChange = {lastName = it} // Updates the last name state when the value changes.
             )
+            Spacer(modifier = Modifier.height(12.dp)) // Adds vertical space.
 
             MyTextField( // A custom text field for the email input.
                 labelValue = stringResource(id = R.string.email), // The label for the text field.
@@ -108,6 +110,7 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
                 textValue = email, // The value of the text field.
                 onValueChange = {email = it} // Updates the email state when the value changes.
             )
+            Spacer(modifier = Modifier.height(12.dp)) // Adds vertical space.
 
             PasswordTextFieldComponent( // A custom text field for the password input.
                 labelValue = stringResource(id = R.string.password), // The label for the text field.
@@ -115,6 +118,7 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
                 password = password, // The value of the text field.
                 onPasswordChange = {password = it} // Updates the password state when the value changes.
             )
+            Spacer(modifier = Modifier.height(12.dp)) // Adds vertical space.
 
             MyTextField( // A custom text field for the security question input.
                 labelValue = stringResource(id = R.string.security_question), // The label for the text field.
@@ -123,7 +127,28 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
                 onValueChange = {securityAnswer = it}, // Updates the security answer state when the value changes.
             )
 
-            Spacer(modifier = Modifier.height(20.dp)) // Adds vertical space.
+            Spacer(modifier = Modifier.height(12.dp)) // Adds vertical space.
+            Row( // A horizontally arranged layout for the checkbox and the terms and conditions text.
+                verticalAlignment = Alignment.CenterVertically, // Vertically centers the children.
+                modifier = Modifier.fillMaxWidth() // Fills the maximum available width.
+            ) {
+
+                Checkbox( // A checkbox for agreeing to the terms and conditions.
+                    checked = checked, // The current state of the checkbox.
+                    onCheckedChange = { checked = it } // Updates the state when the checkbox is checked or unchecked.
+                )
+
+                Text( // The text for the terms and conditions.
+                    text = "Accept Terms and Conditions",
+                    fontSize = 16.sp,
+                    color = Color(0xFF00E0C7),
+                    textDecoration = TextDecoration.Underline, // Underlines the text.
+                    modifier = Modifier.clickable { // Makes the text clickable.
+                        onViewTerms() // Calls the onViewTerms callback when the text is clicked.
+                    }
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp)) // Adds vertical space.
 
             Button( // A button for signing up.
                 onClick = { // The action to perform when the button is clicked.
@@ -181,45 +206,19 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
             ){
                     Text(text = "Sign Up", fontSize = 18.sp) // The text to display on the button.
             }
-            Spacer(modifier = Modifier.height(20.dp)) // Adds vertical space.
-
-
-            Button(onClick = { // A button to navigate to the Sign In screen.
-                // Check if the user is signed in
-                onViewSignIn() // Calls the onViewSignIn callback.
-            }, modifier = Modifier
-                .fillMaxWidth()      // full width
-                .height(50.dp),      // large height
-                shape = RectangleShape, // Sets the shape of the button.
-                colors = ButtonDefaults.buttonColors( // Sets the colors of the button.
-                    containerColor = Color(0xFF00E0C7), // teal accent
-                    contentColor = Color.Black          // text color
-                ), contentPadding = PaddingValues(vertical = 12.dp) // Adds padding to the content of the button.
+            Spacer(modifier = Modifier.height(12.dp)) // Adds vertical space.
+            Text( // A text component for the forgot password button
+                text = "Already have an account?",
+                fontSize = 16.sp,
+                color = Color(0xFF00E0C7),
+                textDecoration = TextDecoration.Underline,// The text to display
+                modifier = Modifier.clickable { // Makes the text clickable
+                    onViewSignIn() // Calls the onForgotPassword callback when the text is clicked
+                }
             )
-            {
-                Text(text = "Sign In", fontSize = 18.sp) // The text to display on the button.
-            }
 
-            Row( // A horizontally arranged layout for the checkbox and the terms and conditions text.
-                verticalAlignment = Alignment.CenterVertically, // Vertically centers the children.
-                modifier = Modifier.fillMaxWidth() // Fills the maximum available width.
-            ) {
 
-                Checkbox( // A checkbox for agreeing to the terms and conditions.
-                    checked = checked, // The current state of the checkbox.
-                    onCheckedChange = { checked = it } // Updates the state when the checkbox is checked or unchecked.
-                )
 
-                Text( // The text for the terms and conditions.
-                    text = "Accept Terms and Conditions",
-                    fontSize = 16.sp,
-                    color = Color(0xFF00E0C7),
-                    textDecoration = TextDecoration.Underline, // Underlines the text.
-                    modifier = Modifier.clickable { // Makes the text clickable.
-                        onViewTerms() // Calls the onViewTerms callback when the text is clicked.
-                    }
-                )
-            }
 
         }
 

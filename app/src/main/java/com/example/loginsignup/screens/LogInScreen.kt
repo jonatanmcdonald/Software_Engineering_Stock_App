@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,7 +43,8 @@ import com.example.loginsignup.viewModels.UserViewModel
 
 @Composable
 fun LogInScreen(onSignedIn: () -> Unit, // Callback for when the user successfully signs in
-                onForgotPassword: () -> Unit, // Callback for when the user clicks the forgot password button
+                onForgotPassword: () -> Unit,
+    onCreateAccount: () -> Unit, // Callback for when the user clicks the forgot password button
                 userViewModel: UserViewModel = viewModel() // Injects the UserViewModel
 )
 {
@@ -124,9 +126,21 @@ fun LogInScreen(onSignedIn: () -> Unit, // Callback for when the user successful
             Spacer(modifier = Modifier.height(20.dp)) // Adds vertical space
 
             Text( // A text component for the forgot password button
-                text = "Forgot your password?", // The text to display
+                text = "Forgot your password?",
+                fontSize = 16.sp,
+                color = Color(0xFF00E0C7),
+                textDecoration = TextDecoration.Underline,// The text to display
                 modifier = Modifier.clickable { // Makes the text clickable
                     onForgotPassword() // Calls the onForgotPassword callback when the text is clicked
+                }
+            )
+            Text( // A text component for the forgot password button
+                text = "Create account?",
+                fontSize = 16.sp,
+                color = Color(0xFF00E0C7),
+                textDecoration = TextDecoration.Underline,// The text to display
+                modifier = Modifier.clickable { // Makes the text clickable
+                    onCreateAccount() // Calls the onForgotPassword callback when the text is clicked
                 }
             )
 
@@ -139,5 +153,5 @@ fun LogInScreen(onSignedIn: () -> Unit, // Callback for when the user successful
 @Preview
 @Composable
 fun DefaultPreviewOfLogInScreen() {
-    LogInScreen(onSignedIn = {}, onForgotPassword = {})
+    LogInScreen(onSignedIn = {}, onForgotPassword = {}, onCreateAccount = {})
 }

@@ -78,7 +78,7 @@ fun AppNavHost() {
         NavHost(
             navController = navController,
             // Set the start destination based on whether the user is signed in.
-            startDestination = if (isSignedIn) MainDest.HOME else AuthDest.SIGN_UP,
+            startDestination = if (isSignedIn) MainDest.HOME else AuthDest.LOGIN,
             // Apply padding provided by the Scaffold.
             modifier = Modifier.padding(padding)
         ) {
@@ -111,6 +111,7 @@ fun AppNavHost() {
                     },
                     // Navigate to the Terms and Conditions screen.
                     onForgotPassword = {navController.navigate(AuthDest.RESET)},
+                    onCreateAccount = {navController.navigate(AuthDest.SIGN_UP)},
 
                 )
             }
