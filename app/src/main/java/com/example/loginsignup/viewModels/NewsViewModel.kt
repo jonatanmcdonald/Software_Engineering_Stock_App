@@ -2,6 +2,7 @@ package com.example.loginsignup.viewModels
 
 import android.app.Application
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 // This class is the ViewModel for the News screen.
 @RequiresApi(Build.VERSION_CODES.O)
@@ -40,14 +42,24 @@ class NewsViewModel(application: Application): AndroidViewModel(application) {
     }
 
     // This function fetches the news.
-    fun getNews()
-    {
-        viewModelScope.launch { // Launches a coroutine in the ViewModel scope.
-            _isLoading.value = true // Sets the loading state to true.
-             _news.value = repository.getNewsThisMonth() // Fetches the news from the repository.
-            _isLoading.value = false // Sets the loading state to false.
+    fun getNews() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val items = repository.getNewsThisMonth()
+                _news.value = items
+            } catch (e: IOException) {
+                // No internet / timeout / DNS, etc.
+                Log.e("NewsViewModel", "Network error while loading news", e)
+                _news.value = emptyList()
+            } catch (e: Exception) {
+                // Any other unexpected error
+                Log.e("NewsViewModel", "Unexpected error while loading news", e)
+                _news.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
         }
-
     }
 
 }

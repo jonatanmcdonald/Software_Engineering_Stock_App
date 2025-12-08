@@ -2,7 +2,9 @@ package com.example.loginsignup.screens
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -38,6 +40,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 // --------- Top-level Screen -----------
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class) // Opt-in for using experimental Material 3 APIs
 @Composable // Marks a function as a composable UI element
 fun NewsScreen(
