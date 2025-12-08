@@ -153,7 +153,7 @@ class PortfolioViewModel(application: Application) : AndroidViewModel(applicatio
             val last: Double        = resp.price
             val changePerShare: Double? = resp.change            // absolute per-share
             // Normalize percent: if API sends 0.0123 as fraction, convert to 1.23%
-            val pct: Double? = resp.percentChange?.let { if (kotlin.math.abs(it) <= 1.0) it * 100.0 else it }
+            val pct: Double? = resp.percentChange?.div(100)
 
             val prevClose: Double? = when {
                 changePerShare != null -> last.minus(changePerShare)
