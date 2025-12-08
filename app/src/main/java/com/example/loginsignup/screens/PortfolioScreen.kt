@@ -450,7 +450,7 @@ private fun PortfolioCard( // A card for each portfolio item.
                     ) {
                         alertOptions.forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option) },
+                                text = { Text(conditionSymbols[option] ?: option) },
                                 onClick = {
                                     editableAlertParameter = option
                                     alertMenuExpanded = false
