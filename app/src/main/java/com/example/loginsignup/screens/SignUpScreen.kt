@@ -181,6 +181,7 @@ fun SignUpScreen(onViewTerms: () -> Unit, // Callback function to navigate to th
                             if (success) { // If the sign up was successful.
                                 Toast.makeText(context, "Sign Up Successful!", Toast.LENGTH_SHORT) // Show a success message.
                                     .show()
+                                onViewSignIn()
                             } else { // If the sign up failed.
                                 Toast.makeText( // Show an error message.
                                     context,
